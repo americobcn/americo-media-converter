@@ -14,20 +14,26 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var filesTableView: NSTableView!
     @IBOutlet weak var navBarView: NSView!
     @IBOutlet weak var playerView: AVPlayerView!
+    @IBOutlet weak var outTextView: NSTextField!
+    @IBOutlet weak var audioFormatButton:NSPopUpButton!
+    @IBOutlet weak var audioBitrateButton:NSPopUpButton!
+    @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
+    
     private var contentView: NSView!
     var navBar: NavigationBarView!
-    
-    
+        
     // MARK: Media related variables
     struct mediaFile {
         var mfURL: URL
         var formatsDescriptions: [String: Any] = [:] //CMFormatDescription
     }
-    
-    
+        
     var files: [mediaFile] = []
     let mc = MediaController()
     var movieDepth: CFPropertyList?
+        
+    let vc = VideoConverter()
+    let ac = AudioConverter()
     
     
     // MARK: Initializers
@@ -39,8 +45,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
-    //     setupNavBar()
+        setupConverterView()
+        setupNavBar()
         
+    }
+        
+    func setupConverterView() {
+        audioFormatButton.removeAllItems()
+        audioFormatButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
+        audioBitrateButton.removeAllItems()
+        audioBitrateButton.addItems(withTitles: ["320", "256", "128"])
+        audioFrequencyButton.removeAllItems()
+        audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
     }
     
     
@@ -52,34 +68,82 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     
     func setupNavBar() {
-        contentView = NSView(frame: NSRect(x: 750, y: 20, width: 800, height: 550))
-        view.addSubview(contentView)
+        // contentView = NSView(frame: NSRect(x: 750, y: 20, width: 800, height: 550))
+        // view.addSubview(contentView)
         
-        let homeView = NSView(frame: contentView.bounds)
-        homeView.wantsLayer = true
-        homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
-        
-        let settingsView = NSView(frame: contentView.bounds)
-        settingsView.wantsLayer = true
-        settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
-        
-        let profileView = NSView(frame: contentView.bounds)
-        profileView.wantsLayer = true
-        profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
+        // let homeView = NSView(frame: contentView.bounds)
+        // homeView.wantsLayer = true
+        // homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        //
+        // let settingsView = NSView(frame: contentView.bounds)
+        // settingsView.wantsLayer = true
+        // settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
+        //
+        // let profileView = NSView(frame: contentView.bounds)
+        // profileView.wantsLayer = true
+        // profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
         
         navBar = NavigationBarView(frame: NSRect(x: 0, y: 0, width: navBarView.bounds.width  , height: navBarView.bounds.height),
-                                   views: [homeView, settingsView, profileView])
+                                   views: [])
         navBar.delegate = self
         navBarView.addSubview(navBar)
-
+        
     }
     
+    
+    //MARK: IBAction Methods
+    @IBAction func convertAudio(_ sender: NSButton) {
+        print("Converting....")
+        var converterPath: String = ""
+        var arguments: String = ""
+        var bitFepth = ""
+        
+        if audioFormatButton.title == "WAV" {
+            switch audioBitrateButton.title {
+            case "24":
+                bitFepth = "pcm_s24le"
+            case "32":
+                bitFepth = "pcm_s32le"
+            default:
+                bitFepth = "pcm_s16le"
+            }
+        }
+        
+        switch audioFormatButton.title {
+        case "MP3":
+            converterPath = "/usr/local/bin/lame"
+            arguments = String(format: "-b %@ -o", audioBitrateButton.title)
+        case "WAV":
+            converterPath = "/usr/local/bin/ffmpeg"
+            arguments = String(format: "-c:a %@ -ar %@",  bitFepth,  audioFrequencyButton.title)
+        default:
+            converterPath = "/usr/local/bin/ffmpeg"
+            arguments = String(format: "-codec:a %@ -b:a %@k",  audioFormatButton.title.lowercased(), audioBitrateButton.title.lowercased())
+        }
+        
+        
+        for file in files {
+            ac.convertAudio(file: file.mfURL.path, codec: audioFormatButton.title, converter: converterPath, args: arguments) {
+                success, error in
+                if success {
+                    print("Conversion successful!")
+                    DispatchQueue.main.async {
+                        self.outTextView.stringValue = "Success"
+                    }
+                } else {
+                    print("Error: \(error ?? "Unknown error")")
+                    self.outTextView.stringValue = "Error: \(error ?? "Unknown error")"
+                    // self.audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Error: \(error ?? "Unknown error")"))
+                }
+            }
+        }
+    }
     
     // MARK: NavigationBarDelegate methods
     func didSelectView(_ view: NSView) {
         print("Button tapped: \(view)")
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        contentView.addSubview(view)
+        // contentView.subviews.forEach { $0.removeFromSuperview() }
+        // contentView.addSubview(view)
     }
     
     
@@ -141,8 +205,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
                    proposedRow row: Int,
                    proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation
     {
-        if dropOperation == .above {
+        if info.draggingSource as? NSTableView == tableView {
+            // Internal move (row reordering)
+            tableView.setDropRow(row, dropOperation: .above)
             return .move
+        } else if info.draggingPasteboard.types?.contains(.fileURL) == true {
+            // File Drop (from Finder)
+            tableView.setDropRow(row, dropOperation: .above)
+            return .copy
         }
         return []
     }
@@ -155,61 +225,90 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         dropOperation: NSTableView.DropOperation)
     -> Bool
     {
-        guard let pasteboardObjects = info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil),
-              pasteboardObjects.count > 0 else {
-                  return false
-              }
-        pasteboardObjects.forEach { (object) in
-            if let url = object as? NSURL {
-                let mfInfo = mc.isAVMediaType(url: url as URL)
-                if mfInfo.0 == true {
-                    let mfFile: mediaFile! = mediaFile(
-                        mfURL: URL(fileURLWithPath: url.path!),
-                        formatsDescriptions: mfInfo.1
-                    )
-                    files.append(mfFile)
+        // Moved row on tableview
+        if info.draggingSource as? NSTableView == tableView {
+            // print("MOVING")
+            // print("SELECTED ROWS: \(self.filesTableView.selectedRow)")
+            guard let sourceRow = tableView.selectedRowIndexes.first else {
+                //print("RETURNING 1")
+                return false
+            }
+            
+            guard sourceRow != row else {
+                //print("RETURNING 2")
+                return false
+            } // Prevent dropping onto the same row
+            
+            let draggedItem = files[sourceRow]
+            files.remove(at: sourceRow)
+            
+            // Adjust the destination index when dragging downwards
+            let adjustedIndex = row > sourceRow ? row - 1 : row
+            files.insert(draggedItem, at: adjustedIndex)
+            tableView.moveRow(at: sourceRow, to: adjustedIndex)
+            return true
+            
+        // Dragged files from finder
+        } else if info.draggingPasteboard.types?.contains(.fileURL) == true {
+            // print("DROPPED")
+            guard let pasteboardObjects = info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil),
+                  pasteboardObjects.count > 0 else {
+                return false
+            }
+            pasteboardObjects.forEach { (object) in
+                if let url = object as? NSURL {
+                    let mfInfo = mc.isAVMediaType(url: url as URL)
+                    if mfInfo.0 == true {
+                        let mfFile: mediaFile! = mediaFile(
+                            mfURL: URL(fileURLWithPath: url.path!),
+                            formatsDescriptions: mfInfo.1
+                        )
+                        files.append(mfFile)
+                    }
                 }
             }
+            
+            tableView.reloadData()
+            return true
         }
         
-        tableView.reloadData()
-        return true
+        return false
     }
     
     
     // MARK: Keyboard event handlers
-        override func keyDown(with event: NSEvent) {
-            switch event.keyCode {
-            case 51:
-                deleteSelectedRow()
-                break
-            case 49:
-                playPause()
-                break
-            default:
-                super.keyDown(with: event)
-            }
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 51:
+            deleteSelectedRow()
+            break
+        case 49:
+            playPause()
+            break
+        default:
+            super.keyDown(with: event)
         }
-
+    }
     
-        private func playPause() {
-            if playerView.player?.rate == 0.0  {
-                playerView.player?.play()
-            } else {
-                playerView.player?.pause()
-            }
+    
+    private func playPause() {
+        if playerView.player?.rate == 0.0  {
+            playerView.player?.play()
+        } else {
+            playerView.player?.pause()
         }
+    }
     
-        private func deleteSelectedRow() {
-            let selectedRow = filesTableView.selectedRow
-            guard selectedRow >= 0 else { return }
-            
-            files.remove(at: selectedRow) // Remove from data source
-            filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
-        }
-    
-            
+    private func deleteSelectedRow() {
+        let selectedRow = filesTableView.selectedRow
+        guard selectedRow >= 0 else { return }
         
+        files.remove(at: selectedRow) // Remove from data source
+        filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+    }
+    
+    
+    
     // MARK: Format Descriptions functions
     func getFormatDescription(row: Int) -> String {
         var description: String = ""
@@ -387,6 +486,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
+    
+    
+    
 }
 
 

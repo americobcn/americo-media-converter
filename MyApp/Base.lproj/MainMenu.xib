@@ -16,8 +16,12 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <viewController id="Aah-Fg-SPx" customClass="MVC" customModule="MyApp" customModuleProvider="target">
             <connections>
+                <outlet property="audioBitrateButton" destination="y0k-Ly-81m" id="ee9-BI-dSo"/>
+                <outlet property="audioFormatButton" destination="N5D-Nk-Rxb" id="z14-Fh-KhO"/>
+                <outlet property="audioFrequencyButton" destination="ejs-PX-gLI" id="hrb-xc-mtD"/>
                 <outlet property="filesTableView" destination="7iD-HE-fPz" id="hG7-DV-ydm"/>
                 <outlet property="navBarView" destination="EP1-Qs-geU" id="5JQ-sz-HBc"/>
+                <outlet property="outTextView" destination="DDX-mY-4ah" id="Hxu-YU-FlW"/>
                 <outlet property="playerView" destination="dpT-su-Ypf" id="eZ6-kR-tvV"/>
                 <outlet property="view" destination="EiT-Mj-1SZ" id="Pto-9c-agM"/>
             </connections>
@@ -714,7 +718,7 @@
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                     <tableColumns>
-                                        <tableColumn identifier="fileColumn" editable="NO" width="926" minWidth="40" maxWidth="1000" id="bNm-Hn-i5X">
+                                        <tableColumn identifier="fileColumn" width="926" minWidth="40" maxWidth="1000" id="bNm-Hn-i5X">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Files">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -814,7 +818,45 @@
                     <customView identifier="navBarView" toolTip="Navigation Bar" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EP1-Qs-geU">
                         <rect key="frame" x="1000" y="404" width="900" height="96"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES"/>
+                        <subviews>
+                            <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="N5D-Nk-Rxb">
+                                <rect key="frame" x="17" y="52" width="138" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="MUE-Gv-dmc">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="menu"/>
+                                    <menu key="menu" id="Vx2-OB-ivd"/>
+                                </popUpButtonCell>
+                            </popUpButton>
+                            <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="y0k-Ly-81m">
+                                <rect key="frame" x="156" y="52" width="149" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="Ycg-Ve-H5l">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="menu"/>
+                                    <menu key="menu" id="jnz-f3-DRe"/>
+                                </popUpButtonCell>
+                            </popUpButton>
+                            <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ejs-PX-gLI">
+                                <rect key="frame" x="306" y="52" width="159" height="25"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="jb6-gs-dev">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="menu"/>
+                                    <menu key="menu" id="N0x-WK-MLd"/>
+                                </popUpButtonCell>
+                            </popUpButton>
+                        </subviews>
                     </customView>
+                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DDX-mY-4ah">
+                        <rect key="frame" x="998" y="20" width="904" height="376"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" lineBreakMode="clipping" allowsUndo="NO" id="FFM-Wf-dby">
+                            <font key="font" metaFont="system" size="14"/>
+                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
                 </subviews>
             </view>
             <point key="canvasLocation" x="200" y="400"/>

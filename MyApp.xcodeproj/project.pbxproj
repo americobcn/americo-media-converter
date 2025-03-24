@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -27,6 +27,10 @@
 		1EEA4B702D8DC220005152DF /* MyApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MyApp.entitlements; sourceTree = "<group>"; };
 		1EEA4B762D8DC324005152DF /* MVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MVC.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		DA0CC0032D91CAD9002E5BB5 /* Converters */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Converters; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		1EEA4B632D8DC21E005152DF /* Frameworks */ = {
@@ -76,6 +80,7 @@
 		1EEA4B682D8DC21E005152DF /* MyApp */ = {
 			isa = PBXGroup;
 			children = (
+				DA0CC0032D91CAD9002E5BB5 /* Converters */,
 				1E1E25FE2D9096AA005B5554 /* Controllers */,
 				1E1E25FD2D90969A005B5554 /* Views */,
 				1EEA4B692D8DC21E005152DF /* AppDelegate.swift */,
@@ -100,6 +105,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DA0CC0032D91CAD9002E5BB5 /* Converters */,
 			);
 			name = MyApp;
 			productName = MyApp;
