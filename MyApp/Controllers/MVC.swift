@@ -24,6 +24,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         var formatsDescriptions: [String: Any] = [:] //CMFormatDescription
     }
     
+    
     var files: [mediaFile] = []
     let mc = MediaController()
     var movieDepth: CFPropertyList?
@@ -33,6 +34,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,8 +48,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         filesTableView.delegate = self
         filesTableView.dataSource = self
         filesTableView.registerForDraggedTypes([.fileURL])
-        
-        
     }
     
     
@@ -88,6 +88,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     {
         return files.count
     }
+    
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let colIdentifier = tableColumn?.identifier else { return nil }
@@ -141,7 +142,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
                    proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation
     {
         if dropOperation == .above {
-            return .copy
+            return .move
         }
         return []
     }
@@ -161,12 +162,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         pasteboardObjects.forEach { (object) in
             if let url = object as? NSURL {
                 let mfInfo = mc.isAVMediaType(url: url as URL)
-                if mfInfo.0 {
+                if mfInfo.0 == true {
                     let mfFile: mediaFile! = mediaFile(
                         mfURL: URL(fileURLWithPath: url.path!),
                         formatsDescriptions: mfInfo.1
                     )
-                    // print("ADDING:\n\(String(describing: mfFile))")
                     files.append(mfFile)
                 }
             }
@@ -177,20 +177,40 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     }
     
     
-    override func keyDown(with event: NSEvent) {
-            if event.keyCode == 49 { // Spacebar key code
-                if playerView.player?.rate == 0.0  {
-                    playerView.player?.play()
-                } else {
-                    playerView.player?.pause()
-                }
-                
-            } else {
+    // MARK: Keyboard event handlers
+        override func keyDown(with event: NSEvent) {
+            switch event.keyCode {
+            case 51:
+                deleteSelectedRow()
+                break
+            case 49:
+                playPause()
+                break
+            default:
                 super.keyDown(with: event)
             }
         }
+
+    
+        private func playPause() {
+            if playerView.player?.rate == 0.0  {
+                playerView.player?.play()
+            } else {
+                playerView.player?.pause()
+            }
+        }
+    
+        private func deleteSelectedRow() {
+            let selectedRow = filesTableView.selectedRow
+            guard selectedRow >= 0 else { return }
+            
+            files.remove(at: selectedRow) // Remove from data source
+            filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+        }
+    
+            
         
-        
+    // MARK: Format Descriptions functions
     func getFormatDescription(row: Int) -> String {
         var description: String = ""
         for (key, _) in files[row].formatsDescriptions {
@@ -367,11 +387,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
-    
-    
-    
-    
-    
 }
 
 

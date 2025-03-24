@@ -22,7 +22,7 @@ class MediaController: NSObject {
             return (isPlayable: true, formats: format)
         }
         
-        return (isPlayable: true, formats: format)
+        return (isPlayable: false, formats: format)
     }
     
     func getMetadata(asset: AVURLAsset ) -> [String: Any] {
