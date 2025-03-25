@@ -47,9 +47,22 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         setupTableView()
         setupConverterView()
         setupNavBar()
+        setupOutputView()
+    }
+    
+    func setupOutputView() {
+        outTextView.wantsLayer = true
+        outTextView.bezelStyle = .squareBezel
+        outTextView.layer?.backgroundColor = NSColor.black.cgColor
+        outTextView.textColor = NSColor.lightGray
+        outTextView.layer?.borderWidth = 0.3
+        outTextView.layer?.borderColor = NSColor.gray.cgColor
+        outTextView.layer?.cornerRadius = 6
+        
         
     }
-        
+    
+    
     func setupConverterView() {
         audioFormatButton.removeAllItems()
         audioFormatButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])

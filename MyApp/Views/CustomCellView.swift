@@ -11,14 +11,14 @@ class CustomCellView: NSTableCellView {
     
     let fileNameLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
-        label.font = NSFont.boldSystemFont(ofSize: 16)
+        label.font = NSFont.boldSystemFont(ofSize: 15)
         label.textColor = NSColor(red: 0.2, green: 0.9, blue: 0.2, alpha: 0.7)
         return label
     }()
     
     let fileInfoLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
-        label.font = NSFont.systemFont(ofSize: 14)
+        label.font = NSFont.systemFont(ofSize: 13)
         label.textColor = .secondaryLabelColor
         return label
     }()
@@ -50,7 +50,7 @@ class CustomCellView: NSTableCellView {
         cellImageView.translatesAutoresizingMaskIntoConstraints = false
         fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
         fileInfoLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
             cellImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             cellImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -66,24 +66,6 @@ class CustomCellView: NSTableCellView {
             fileInfoLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
             fileInfoLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -5)
         ])
+
     }
 }
-
-
-
-
-/*
-class CustomCellView: NSTableCellView {
-    
-    @IBOutlet weak var fileNameLabel: NSTextField!
-    @IBOutlet weak var fileInfoLabel: NSTextField!
-    @IBOutlet weak var fileImage: NSImageView!
-    
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        // Drawing code here.
-    }
-    
-}
-*/

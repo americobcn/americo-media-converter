@@ -28,8 +28,8 @@ class NavigationBarView: NSView {
     
     private func configureAppearance() {
         wantsLayer = true
-        layer?.backgroundColor = NSColor.clear.cgColor
-        layer?.cornerRadius = 10
+        layer?.backgroundColor = NSColor(calibratedRed: 0.08, green: 0.08, blue: 0.08, alpha: 1).cgColor  //.green.cgColor
+        layer?.cornerRadius = 5
     }
     
     private func createButtons() {
@@ -38,13 +38,13 @@ class NavigationBarView: NSView {
         
         for (index, title) in buttonTitles.enumerated() {
             let button = NSButton(title: title, target: self, action: #selector(buttonTapped(_:)))
-            button.bezelStyle = .shadowlessSquare
+            button.bezelStyle = .smallSquare  //.shadowlessSquare
             button.image = NSImage(systemSymbolName: buttonIcons[index], accessibilityDescription: nil)
             button.imagePosition = .imageLeading
             button.contentTintColor = .white
             button.wantsLayer = true
-            button.layer?.backgroundColor = NSColor.darkGray.cgColor// buttonColors[index].cgColor
-            button.layer?.cornerRadius = 8            
+            button.layer?.backgroundColor = NSColor(calibratedRed: 0.12, green: 0.12, blue: 0.12, alpha: 1).cgColor //NSColor.darkGray.cgColor
+            button.layer?.cornerRadius = 4
             button.tag = index
             print("Adding Buttons")
             buttons.append(button)
@@ -57,14 +57,14 @@ class NavigationBarView: NSView {
         let buttonWidth: CGFloat = 125  // frame.width / CGFloat(buttons.count)
         let buttonHeight: CGFloat = 30  // frame.height / 1.5
         for (index, button) in buttons.enumerated() {
-            button.frame = CGRect(x: CGFloat(index) * buttonWidth + 5, y: 5, width: buttonWidth - 10, height: buttonHeight)
+            button.frame = CGRect(x: CGFloat(index) * buttonWidth + 5, y: bounds.height - buttonHeight - 5, width: buttonWidth - 10, height: buttonHeight)
         }
     }
     
     @objc private func buttonTapped(_ sender: NSButton) {
         let selectedIndex = sender.tag
         if selectedIndex < buttons.count {
-            delegate?.didSelectView(views[selectedIndex])
+            // delegate?.didSelectView(views[selectedIndex])
         }
     }
 }
