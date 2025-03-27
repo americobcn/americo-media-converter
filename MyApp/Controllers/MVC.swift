@@ -141,19 +141,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     //MARK: IBAction Methods
     @IBAction func convertAudio(_ sender: NSButton) {
-        // audioOutTextView.textStorage?.setAttributedString(NSAttributedString())
-        // audioOutTextView.textStorage?.append(NSAttributedString(string: "Converting"))
+
         var arguments: String = ""
-        var bitFepth = ""
+        var wavBitDepth = ""
         
         if audioTypeButton.title == "WAV" {
             switch audioBitsButton.title {
             case "24":
-                bitFepth = "pcm_s24le"
+                wavBitDepth = "pcm_s24le"
             case "32":
-                bitFepth = "pcm_s32le"
+                wavBitDepth = "pcm_s32le"
             default:
-                bitFepth = "pcm_s16le"
+                wavBitDepth = "pcm_s16le"
             }
         }
         
@@ -162,7 +161,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             arguments = String(format: "-codec:a %@ -b:a %@k",  audioTypeButton.title.lowercased(), audioBitsButton.title.lowercased())
             break
         case "WAV":
-            arguments = String(format: "-c:a %@ -ar %@",  bitFepth,  audioFrequencyButton.title)
+            arguments = String(format: "-c:a %@ -ar %@",  wavBitDepth,  audioFrequencyButton.title)
             break
         case "MP3":
             arguments = String(format: "-b %@ -o", audioBitsButton.title)
@@ -172,7 +171,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             // audioOutTextView.textStorage?.append(NSAttributedString(string: "Something went wrong"))
         }
         
-        audioOutTextView.textStorage?.append(NSAttributedString(string: "\(bitFepth) \(arguments)"))
+        audioOutTextView.textStorage?.append(NSAttributedString(string: "args: \(arguments)"))
         for file in files {
             ac.convertAudio(file: file.mfURL.path, codec: audioTypeButton.title, args: arguments ) {
                 success, error in
@@ -182,8 +181,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
                         self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Conversion successful"))
                     }
                 } else {
-//                    print("Error: \(error ?? "Unknown error")")
-                    self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Error: \(error ?? "Unknown error")"))
+                    print("Error: \(error ?? "Unknown error")")
                 }
             }
         }

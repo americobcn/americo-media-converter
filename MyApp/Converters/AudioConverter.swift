@@ -17,12 +17,15 @@ class AudioConverter {
     
     let lamePath: String
     let ffmpegPath: String
+    let afconvertPath: String
     var converter: String = ""
     
-    init(lamePath: String = "/usr/local/bin/lame", ffmpegPath: String = "/usr/local/bin/ffmpeg", delegate: AudioConverterDelegate) {
+    init(lamePath: String = "/usr/local/bin/lame", ffmpegPath: String = "/usr/local/bin/ffmpeg", afconvert: String = "/usr/bin/afconvert",
+         delegate: AudioConverterDelegate) {
         self.lamePath = lamePath
         self.ffmpegPath = ffmpegPath
         self.converter = lamePath
+        self.afconvertPath = afconvert
         self.delegate = delegate
     }
     
