@@ -7,29 +7,46 @@
 
 import Foundation
 
-class AudioConverter {
 
+protocol AudioConverterDelegate: AnyObject {
+    func shouldUpdateAudioOutView(_ converter: AudioConverter, _ text: String)
+}
+
+class AudioConverter {
+    var delegate: AudioConverterDelegate?
+    
     let lamePath: String
     let ffmpegPath: String
+    var converter: String = ""
     
-    
-    init(lamePath: String = "/usr/local/bin/lame", ffmpegPath: String = "/usr/local/bin/ffmpeg") {
+    init(lamePath: String = "/usr/local/bin/lame", ffmpegPath: String = "/usr/local/bin/ffmpeg", delegate: AudioConverterDelegate) {
         self.lamePath = lamePath
         self.ffmpegPath = ffmpegPath
+        self.converter = lamePath
+        self.delegate = delegate
     }
-        
-    func convertAudio(file: String, codec: String, converter: String, args: String, completion: @escaping (Bool, String?) -> Void) {
+    
+    
+    func convertAudio(file: String, codec: String,  args: String, completion: @escaping (Bool, String?) -> Void) {
         var newExtension: String = ""
         var options: Array<String> = []
         switch codec {
         case "WAV":
+            converter = ffmpegPath
             newExtension = codec.lowercased()
             options.append("-i")
-        case "MP3":
-            newExtension = codec.lowercased()
-        default:
+            break
+        case "AAC":
+            converter = ffmpegPath
             newExtension = "m4a"
             options.append("-i")
+            break
+        case "MP3":
+            converter = lamePath
+            newExtension = codec.lowercased()
+            break
+        default:
+            break
         }
         
         let process = Process()
@@ -53,7 +70,7 @@ class AudioConverter {
             let data = handle.availableData
             guard let output = String(data: data, encoding: .ascii), !output.isEmpty else { return }
             DispatchQueue.main.async {
-                self?.appendText(output)
+                self?.delegate?.shouldUpdateAudioOutView(self!, output)
             }
         }
         
@@ -67,23 +84,18 @@ class AudioConverter {
         } catch {
             completion(false, "Failed to start conversion process: \(error.localizedDescription)")
         }
+        
     }
-
     
-/* PRIVATE FUNCTIONS */
-
-private func appendText(_ text: String) {
-    print("APPENDING: \(text)")
-    // let newText = (self.audioConverterView as NSString).appending(text)
-    // self.string = newText
-    // self.scrollToEndOfDocument(nil)
+    
+    /* PRIVATE FUNCTIONS */
+    private func changeFileExtension(of filePath: String, to newExtension: String) -> String {
+        let url = URL(fileURLWithPath: filePath)
+        let newUrl = url.deletingPathExtension().appendingPathExtension(newExtension.lowercased())
+        return newUrl.path
     }
+    
 }
 
 
-private func changeFileExtension(of filePath: String, to newExtension: String) -> String {
-    let url = URL(fileURLWithPath: filePath)
-    let newUrl = url.deletingPathExtension().appendingPathExtension(newExtension.lowercased())
-    return newUrl.path
-}
 

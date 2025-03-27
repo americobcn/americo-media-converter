@@ -9,15 +9,23 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate {
-    // MARK: Views relate variables
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate {
+    // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
-    @IBOutlet weak var navBarView: NSView!
+    // @IBOutlet weak var navBarView: NSView!
     @IBOutlet weak var playerView: AVPlayerView!
-    @IBOutlet weak var outTextView: NSTextField!
-    @IBOutlet weak var audioFormatButton:NSPopUpButton!
-    @IBOutlet weak var audioBitrateButton:NSPopUpButton!
+    @IBOutlet weak var audioOutTextView: NSTextView!
+    @IBOutlet weak var audioOutScrollView: NSScrollView!
+    
+    // MARK: Audio Outlets
+    @IBOutlet weak var audioTypeLabel: NSTextField!
+    @IBOutlet weak var audioBitsLabel: NSTextField!
+    @IBOutlet weak var audioFrequencyLabel: NSTextField!
+    @IBOutlet weak var audioTypeButton:NSPopUpButton!
+    @IBOutlet weak var audioBitsButton:NSPopUpButton!
     @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
+    
+    var documentView: NSView!
     
     private var contentView: NSView!
     var navBar: NavigationBarView!
@@ -33,12 +41,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     var movieDepth: CFPropertyList?
         
     let vc = VideoConverter()
-    let ac = AudioConverter()
+    var ac: AudioConverter!
     
     
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        ac = AudioConverter(delegate: self)
     }
     
     
@@ -46,28 +55,52 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         super.viewDidLoad()
         setupTableView()
         setupConverterView()
-        setupNavBar()
+        setupPlayerView()
         setupOutputView()
     }
     
+    
+    func setupPlayerView() {
+        playerView.wantsLayer = true
+        playerView.showsFrameSteppingButtons = true
+        playerView.player = AVPlayer()
+    }
+    
+    
     func setupOutputView() {
-        outTextView.wantsLayer = true
-        outTextView.bezelStyle = .squareBezel
-        outTextView.layer?.backgroundColor = NSColor.black.cgColor
-        outTextView.textColor = NSColor.lightGray
-        outTextView.layer?.borderWidth = 0.3
-        outTextView.layer?.borderColor = NSColor.gray.cgColor
-        outTextView.layer?.cornerRadius = 6
+        // documentView = audioOutScrollView.documentView
+        // Configure ScrollView
+        // audioOutScrollView.wantsLayer = true
+        // audioOutScrollView.translatesAutoresizingMaskIntoConstraints = false
+        // audioOutScrollView.hasVerticalScroller = true
+        // audioOutScrollView.hasHorizontalScroller = false
+        // audioOutScrollView.autohidesScrollers = true
         
+        // Configure TextView
+        // audioOutTextView.isEditable = false
+        // audioOutTextView.isSelectable = true
+        // audioOutTextView.isVerticallyResizable = true
+        // audioOutTextView.isHorizontallyResizable = false
+        // audioOutTextView.textContainer?.widthTracksTextView = true
+        // audioOutTextView.textContainer?.heightTracksTextView = false
+        audioOutTextView.backgroundColor = .lightGray
+        // audioOutTextView.textColor = .white
+        // audioOutTextView.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        
+        // Enable text wrapping
+        // audioOutTextView.textContainer?.lineBreakMode = .byWordWrapping
+        
+        // Set ScrollView's document view
+        // audioOutScrollView.documentView = audioOutTextView
         
     }
     
     
     func setupConverterView() {
-        audioFormatButton.removeAllItems()
-        audioFormatButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
-        audioBitrateButton.removeAllItems()
-        audioBitrateButton.addItems(withTitles: ["320", "256", "128"])
+        audioTypeButton.removeAllItems()
+        audioTypeButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
+        audioBitsButton.removeAllItems()
+        audioBitsButton.addItems(withTitles: ["320", "256", "128"])
         audioFrequencyButton.removeAllItems()
         audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
     }
@@ -78,23 +111,24 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         filesTableView.dataSource = self
         filesTableView.registerForDraggedTypes([.fileURL])
     }
+   
     
-    
+    /*
     func setupNavBar() {
-        // contentView = NSView(frame: NSRect(x: 750, y: 20, width: 800, height: 550))
-        // view.addSubview(contentView)
+        contentView = NSView(frame: NSRect(x: 750, y: 20, width: 800, height: 550))
+        view.addSubview(contentView)
         
-        // let homeView = NSView(frame: contentView.bounds)
-        // homeView.wantsLayer = true
-        // homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        let homeView = NSView(frame: contentView.bounds)
+        homeView.wantsLayer = true
+        homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
         //
-        // let settingsView = NSView(frame: contentView.bounds)
-        // settingsView.wantsLayer = true
-        // settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
+        let settingsView = NSView(frame: contentView.bounds)
+        settingsView.wantsLayer = true
+        settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
         //
-        // let profileView = NSView(frame: contentView.bounds)
-        // profileView.wantsLayer = true
-        // profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
+        let profileView = NSView(frame: contentView.bounds)
+        profileView.wantsLayer = true
+        profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
         
         navBar = NavigationBarView(frame: NSRect(x: 0, y: 0, width: navBarView.bounds.width  , height: navBarView.bounds.height),
                                    views: [])
@@ -102,17 +136,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         navBarView.addSubview(navBar)
         
     }
+    */
     
     
     //MARK: IBAction Methods
     @IBAction func convertAudio(_ sender: NSButton) {
-        print("Converting....")
-        var converterPath: String = ""
+        // audioOutTextView.textStorage?.setAttributedString(NSAttributedString())
+        // audioOutTextView.textStorage?.append(NSAttributedString(string: "Converting"))
         var arguments: String = ""
         var bitFepth = ""
         
-        if audioFormatButton.title == "WAV" {
-            switch audioBitrateButton.title {
+        if audioTypeButton.title == "WAV" {
+            switch audioBitsButton.title {
             case "24":
                 bitFepth = "pcm_s24le"
             case "32":
@@ -122,35 +157,61 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             }
         }
         
-        switch audioFormatButton.title {
-        case "MP3":
-            converterPath = "/usr/local/bin/lame"
-            arguments = String(format: "-b %@ -o", audioBitrateButton.title)
+        switch audioTypeButton.title {
+        case "AAC":
+            arguments = String(format: "-codec:a %@ -b:a %@k",  audioTypeButton.title.lowercased(), audioBitsButton.title.lowercased())
+            break
         case "WAV":
-            converterPath = "/usr/local/bin/ffmpeg"
             arguments = String(format: "-c:a %@ -ar %@",  bitFepth,  audioFrequencyButton.title)
+            break
+        case "MP3":
+            arguments = String(format: "-b %@ -o", audioBitsButton.title)
+            break
         default:
-            converterPath = "/usr/local/bin/ffmpeg"
-            arguments = String(format: "-codec:a %@ -b:a %@k",  audioFormatButton.title.lowercased(), audioBitrateButton.title.lowercased())
+            break
+            // audioOutTextView.textStorage?.append(NSAttributedString(string: "Something went wrong"))
         }
         
-        
+        audioOutTextView.textStorage?.append(NSAttributedString(string: "\(bitFepth) \(arguments)"))
         for file in files {
-            ac.convertAudio(file: file.mfURL.path, codec: audioFormatButton.title, converter: converterPath, args: arguments) {
+            ac.convertAudio(file: file.mfURL.path, codec: audioTypeButton.title, args: arguments ) {
                 success, error in
                 if success {
-                    print("Conversion successful!")
                     DispatchQueue.main.async {
-                        self.outTextView.stringValue = "Success"
+//                        print("Conversion Succesfull")
+                        self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Conversion successful"))
                     }
                 } else {
-                    print("Error: \(error ?? "Unknown error")")
-                    self.outTextView.stringValue = "Error: \(error ?? "Unknown error")"
-                    // self.audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Error: \(error ?? "Unknown error")"))
+//                    print("Error: \(error ?? "Unknown error")")
+                    self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Error: \(error ?? "Unknown error")"))
                 }
             }
         }
     }
+    
+
+    @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
+        switch sender.title {
+        case "WAV":
+            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to WAV\n"))
+            audioBitsLabel.stringValue = "Bit Depth"
+            audioBitsButton.removeAllItems()
+            audioBitsButton.addItems(withTitles: ["24", "16"])
+        case "AAC":
+            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to AAC\n"))
+            audioBitsLabel.stringValue = "Bit Rate"
+            audioBitsButton.removeAllItems()
+            audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+        case "MP3":
+            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to MP3\n"))
+            audioBitsLabel.stringValue = "Bit Rate"
+            audioBitsButton.removeAllItems()
+            audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+        default:
+            break
+        }
+    }
+    
     
     // MARK: NavigationBarDelegate methods
     func didSelectView(_ view: NSView) {
@@ -199,8 +260,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         let selectedRow = tableView.selectedRow
         if selectedRow != -1 {
             let item = AVPlayerItem(url: files[selectedRow].mfURL)
-            playerView.player = AVPlayer()
             playerView.player?.replaceCurrentItem(with: item)
+            playerView.player?.rate = 0.0
             
         }
     }
@@ -318,6 +379,22 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         
         files.remove(at: selectedRow) // Remove from data source
         filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+        playerView.player?.replaceCurrentItem(with: nil)
+    }
+    
+    
+    // MARK: AudioConverterDelegate methods
+    func shouldUpdateAudioOutView(_ converter: AudioConverter, _ text: String) {
+        audioOutTextView.textStorage?.append(NSAttributedString(string: text))
+        scrollToBottom()
+    }
+    
+    private func scrollToBottom() {
+        // let scrollView = audioOutTextView.enclosingScrollView!
+        // guard let documentView = audioOutScrollView.documentView else { return }
+        // let newScrollOrigin = NSPoint(x: 0, y: documentView.bounds.height - audioOutScrollView.contentView.bounds.height)
+        // audioOutScrollView.contentView.setBoundsOrigin(newScrollOrigin)
+        audioOutTextView.scrollRangeToVisible(NSRange(location: audioOutTextView.string.count, length: 0))
     }
     
     
@@ -499,8 +576,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
-    
-    
     
 }
 
