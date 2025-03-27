@@ -68,31 +68,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     
     func setupOutputView() {
-        // documentView = audioOutScrollView.documentView
-        // Configure ScrollView
-        // audioOutScrollView.wantsLayer = true
-        // audioOutScrollView.translatesAutoresizingMaskIntoConstraints = false
-        // audioOutScrollView.hasVerticalScroller = true
-        // audioOutScrollView.hasHorizontalScroller = false
-        // audioOutScrollView.autohidesScrollers = true
-        
-        // Configure TextView
-        // audioOutTextView.isEditable = false
-        // audioOutTextView.isSelectable = true
-        // audioOutTextView.isVerticallyResizable = true
-        // audioOutTextView.isHorizontallyResizable = false
-        // audioOutTextView.textContainer?.widthTracksTextView = true
-        // audioOutTextView.textContainer?.heightTracksTextView = false
-        audioOutTextView.backgroundColor = .lightGray
-        // audioOutTextView.textColor = .white
-        // audioOutTextView.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
-        
-        // Enable text wrapping
-        // audioOutTextView.textContainer?.lineBreakMode = .byWordWrapping
-        
-        // Set ScrollView's document view
-        // audioOutScrollView.documentView = audioOutTextView
-        
+        audioOutTextView.backgroundColor = .black
     }
     
     
@@ -110,6 +86,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         filesTableView.delegate = self
         filesTableView.dataSource = self
         filesTableView.registerForDraggedTypes([.fileURL])
+        filesTableView.allowsMultipleSelection = true
+        filesTableView.rowHeight = 60
     }
    
     
@@ -141,49 +119,49 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     //MARK: IBAction Methods
     @IBAction func convertAudio(_ sender: NSButton) {
-
         var arguments: String = ""
-        var wavBitDepth = ""
-        
-        if audioTypeButton.title == "WAV" {
-            switch audioBitsButton.title {
-            case "24":
-                wavBitDepth = "pcm_s24le"
-            case "32":
-                wavBitDepth = "pcm_s32le"
-            default:
-                wavBitDepth = "pcm_s16le"
-            }
-        }
+        var succesFiles: [String] = []
+        var errorFiles: [String] = []
         
         switch audioTypeButton.title {
-        case "AAC":
-            arguments = String(format: "-codec:a %@ -b:a %@k",  audioTypeButton.title.lowercased(), audioBitsButton.title.lowercased())
-            break
         case "WAV":
-            arguments = String(format: "-c:a %@ -ar %@",  wavBitDepth,  audioFrequencyButton.title)
+            arguments = String(format: "-v -f BW64 -d LEI%@@%@ -o", audioBitsButton.title ,audioFrequencyButton.title) // AFCONVERT
+        case "AAC":
+            // arguments = String(format: "-codec:a %@ -b:a %@k",  audioTypeButton.title.lowercased(), audioBitsButton.title.lowercased()) //FFMPEG
+            arguments = String(format: "-v -f m4af -d aac -s 0 -b %@000 -o", audioBitsButton.title)  // AFCONVERT
             break
         case "MP3":
-            arguments = String(format: "-b %@ -o", audioBitsButton.title)
+            arguments = String(format: "-b %@ -o", audioBitsButton.title) // LAME
             break
         default:
             break
-            // audioOutTextView.textStorage?.append(NSAttributedString(string: "Something went wrong"))
         }
         
-        audioOutTextView.textStorage?.append(NSAttributedString(string: "args: \(arguments)"))
+        
+        // audioOutTextView.textStorage?.append(NSAttributedString(string: "args: \(arguments)\n"))
+        audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
             ac.convertAudio(file: file.mfURL.path, codec: audioTypeButton.title, args: arguments ) {
                 success, error in
                 if success {
+                    succesFiles.append(file.mfURL.lastPathComponent)
                     DispatchQueue.main.async {
-//                        print("Conversion Succesfull")
-                        self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Conversion successful"))
+                        self.shouldUpdateAudioOutView(self.ac, "Succesfully converted \(file.mfURL.lastPathComponent)\n")
+                        // self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Conversion successful\n"))
                     }
                 } else {
+                    errorFiles.append(file.mfURL.lastPathComponent)
                     print("Error: \(error ?? "Unknown error")")
                 }
             }
+        }
+        
+        for f in succesFiles {
+            self.shouldUpdateAudioOutView(self.ac, "Succesfully converted \(f)\n")
+        }
+        
+        for f in errorFiles {
+            self.shouldUpdateAudioOutView(self.ac, "Not converted \(f)\n")
         }
     }
     
@@ -194,17 +172,20 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to WAV\n"))
             audioBitsLabel.stringValue = "Bit Depth"
             audioBitsButton.removeAllItems()
-            audioBitsButton.addItems(withTitles: ["24", "16"])
+            audioBitsButton.addItems(withTitles: ["24", "16", "32"])
+            break
         case "AAC":
             audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to AAC\n"))
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
             audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            break
         case "MP3":
             audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to MP3\n"))
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
             audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            break
         default:
             break
         }
@@ -372,18 +353,30 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     }
     
     private func deleteSelectedRow() {
-        let selectedRow = filesTableView.selectedRow
-        guard selectedRow >= 0 else { return }
+        let selectedIndexes = filesTableView.selectedRowIndexes
+        // Ensure there is something to delete
+        guard !selectedIndexes.isEmpty else { return }
         
-        files.remove(at: selectedRow) // Remove from data source
-        filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+        // let selectedRow = filesTableView.selectedRow
+        // guard selectedRow >= 0 else { return }
+        // Convert to an array and delete items from the data source
+        let indexesToRemove = selectedIndexes.sorted(by: >) // Sort in descending order
+        for index in indexesToRemove {
+            files.remove(at: index)
+        }
+        // files.remove(at: selectedRow) // Remove from data source
+        // filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+        filesTableView.removeRows(at: selectedIndexes, withAnimation: .effectFade)
         playerView.player?.replaceCurrentItem(with: nil)
     }
     
     
     // MARK: AudioConverterDelegate methods
     func shouldUpdateAudioOutView(_ converter: AudioConverter, _ text: String) {
-        audioOutTextView.textStorage?.append(NSAttributedString(string: text))
+        audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: [
+            .font: NSFont.systemFont(ofSize: 14),
+            .foregroundColor: NSColor.lightGray
+        ]))
         scrollToBottom()
     }
     

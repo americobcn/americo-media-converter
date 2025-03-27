@@ -58,7 +58,7 @@
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                     <tableColumns>
-                                        <tableColumn identifier="fileColumn" width="926" minWidth="40" maxWidth="1000" id="bNm-Hn-i5X">
+                                        <tableColumn identifier="fileColumn" editable="NO" width="926" minWidth="40" maxWidth="1000" id="bNm-Hn-i5X">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Files">
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -70,18 +70,18 @@
                                             </textFieldCell>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                             <prototypeCellViews>
-                                                <tableCellView identifier="fileCell" id="bND-mb-nxv" customClass="CustomCellView" customModule="MyApp" customModuleProvider="target">
-                                                    <rect key="frame" x="8" y="0.0" width="921" height="60"/>
+                                                <tableCellView identifier="fileCell" translatesAutoresizingMaskIntoConstraints="NO" id="bND-mb-nxv" customClass="CustomCellView" customModule="MyApp" customModuleProvider="target">
+                                                    <rect key="frame" x="8" y="0.0" width="921" height="30"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" id="cyR-Fg-Jio">
-                                                            <rect key="frame" x="3" y="-7" width="60" height="58"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <rect key="frame" x="3" y="-1" width="60" height="28"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" heightSizable="YES"/>
                                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="yxa-0B-QEd"/>
                                                         </imageView>
                                                         <textField identifier="fileInfoField" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="dbZ-1F-iES">
-                                                            <rect key="frame" x="89" y="-12" width="393" height="37"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <rect key="frame" x="89" y="-21" width="390" height="15"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMinY="YES"/>
                                                             <textFieldCell key="cell" lineBreakMode="clipping" id="pbs-wD-1zl">
                                                                 <font key="font" usesAppearanceFont="YES"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -89,8 +89,8 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <textField identifier="fileNameField" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="teO-Ce-KMm">
-                                                            <rect key="frame" x="89" y="33" width="393" height="24"/>
-                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                            <rect key="frame" x="89" y="22" width="390" height="15"/>
+                                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxY="YES"/>
                                                             <textFieldCell key="cell" lineBreakMode="clipping" id="hpW-Zc-mSD">
                                                                 <font key="font" usesAppearanceFont="YES"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>

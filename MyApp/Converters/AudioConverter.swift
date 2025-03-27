@@ -34,21 +34,17 @@ class AudioConverter {
         var newExtension: String = ""
         var options: Array<String> = []
         switch codec {
-        case "WAV":
-            converter = ffmpegPath
-            newExtension = codec.lowercased()
-            options.append("-i")
-            break
-        case "AAC":
-            converter = ffmpegPath
-            newExtension = "m4a"
-            options.append("-i")
-            break
         case "MP3":
             converter = lamePath
             newExtension = codec.lowercased()
             break
         default:
+            converter = afconvertPath
+            if codec == "AAC" {
+                newExtension = "m4a"
+            } else {
+                newExtension = codec.lowercased()
+            }
             break
         }
         
