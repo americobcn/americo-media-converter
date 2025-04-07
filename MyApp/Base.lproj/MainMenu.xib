@@ -30,6 +30,7 @@
                 <outlet property="audioOutTextView" destination="nst-9T-bcg" id="Nx9-6s-Zcd"/>
                 <outlet property="audioTypeButton" destination="N5D-Nk-Rxb" id="hcY-KO-iJi"/>
                 <outlet property="audioTypeLabel" destination="g94-WO-lKz" id="iK0-gl-OnB"/>
+                <outlet property="chooseFolder" destination="2hq-p6-PKS" id="Zci-e8-Ysq"/>
                 <outlet property="filesTableView" destination="7iD-HE-fPz" id="hG7-DV-ydm"/>
                 <outlet property="playerView" destination="dpT-su-Ypf" id="eZ6-kR-tvV"/>
                 <outlet property="view" destination="EiT-Mj-1SZ" id="Pto-9c-agM"/>
@@ -51,8 +52,8 @@
                             <rect key="frame" x="1" y="1" width="958" height="992"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" multipleSelection="NO" autosaveColumns="NO" rowHeight="75" headerView="e01-2W-Dn1" viewBased="YES" id="7iD-HE-fPz">
-                                    <rect key="frame" x="0.0" y="0.0" width="958" height="964"/>
+                                <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" multipleSelection="NO" autosaveColumns="NO" rowHeight="75" viewBased="YES" id="7iD-HE-fPz">
+                                    <rect key="frame" x="0.0" y="0.0" width="958" height="992"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <size key="intercellSpacing" width="17" height="0.0"/>
                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -82,7 +83,7 @@
                                                         <textField identifier="fileInfoField" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="dbZ-1F-iES">
                                                             <rect key="frame" x="89" y="-21" width="390" height="15"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMinY="YES"/>
-                                                            <textFieldCell key="cell" lineBreakMode="clipping" id="pbs-wD-1zl">
+                                                            <textFieldCell key="cell" lineBreakMode="clipping" allowsUndo="NO" id="pbs-wD-1zl">
                                                                 <font key="font" usesAppearanceFont="YES"/>
                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -146,10 +147,6 @@
                             <rect key="frame" x="-100" y="-100" width="15" height="102"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <tableHeaderView key="headerView" autoresizesSubviews="NO" wantsLayer="YES" focusRingType="none" id="e01-2W-Dn1">
-                            <rect key="frame" x="0.0" y="0.0" width="958" height="28"/>
-                            <autoresizingMask key="autoresizingMask"/>
-                        </tableHeaderView>
                     </scrollView>
                     <avPlayerView fixedFrame="YES" controlsStyle="inline" translatesAutoresizingMaskIntoConstraints="NO" id="dpT-su-Ypf">
                         <rect key="frame" x="1000" y="508" width="900" height="506"/>
@@ -259,6 +256,14 @@
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                         </scrollView>
+                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2hq-p6-PKS">
+                                            <rect key="frame" x="464" y="404" width="145" height="18"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <buttonCell key="cell" type="check" title="Choose Destination" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="j2L-zr-eVV">
+                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                <font key="font" metaFont="system"/>
+                                            </buttonCell>
+                                        </button>
                                     </subviews>
                                 </view>
                             </tabViewItem>

@@ -24,6 +24,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var audioTypeButton:NSPopUpButton!
     @IBOutlet weak var audioBitsButton:NSPopUpButton!
     @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
+    @IBOutlet weak var chooseFolder: NSButton!
     
     var documentView: NSView!
     
@@ -44,10 +45,26 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     var ac: AudioConverter!
     
     
+    let regularMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.lightGray
+    ]
+    
+    let errorMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.red
+    ]
+    
+    let succesMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.green
+    ]
+    
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         ac = AudioConverter(delegate: self)
+        
     }
     
     
@@ -119,10 +136,23 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     //MARK: IBAction Methods
     @IBAction func convertAudio(_ sender: NSButton) {
-        var arguments: String = ""
-        var succesFiles: [String] = []
-        var errorFiles: [String] = []
+        if files.count < 1 {
+            return
+        }
         
+        var destinationFolder: String?
+        if chooseFolder.state == .on {
+            destinationFolder = chooseFolderDestination()
+            if destinationFolder == nil {
+                return
+            }
+            print("Choosing folder: \(String(describing: destinationFolder))")
+        } else {
+            destinationFolder = nil
+        }
+                
+        var arguments: String = ""
+    
         switch audioTypeButton.title {
         case "WAV":
             arguments = String(format: "-v -f BW64 -d LEI%@@%@ -o", audioBitsButton.title ,audioFrequencyButton.title) // AFCONVERT
@@ -134,34 +164,20 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             arguments = String(format: "-b %@ -o", audioBitsButton.title) // LAME
             break
         default:
-            break
+            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
+            return
         }
         
-        
-        // audioOutTextView.textStorage?.append(NSAttributedString(string: "args: \(arguments)\n"))
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
-            ac.convertAudio(file: file.mfURL.path, codec: audioTypeButton.title, args: arguments ) {
-                success, error in
+            ac.convertAudio(file: file.mfURL, codec: audioTypeButton.title, args: arguments, textView: audioOutTextView, destinationFolder: destinationFolder) {
+                success, message in
                 if success {
-                    succesFiles.append(file.mfURL.lastPathComponent)
-                    DispatchQueue.main.async {
-                        self.shouldUpdateAudioOutView(self.ac, "Succesfully converted \(file.mfURL.lastPathComponent)\n")
-                        // self.audioOutTextView.textStorage?.append(NSAttributedString(string: "Conversion successful\n"))
-                    }
+                    print(message)
                 } else {
-                    errorFiles.append(file.mfURL.lastPathComponent)
-                    print("Error: \(error ?? "Unknown error")")
+                    print(message)
                 }
             }
-        }
-        
-        for f in succesFiles {
-            self.shouldUpdateAudioOutView(self.ac, "Succesfully converted \(f)\n")
-        }
-        
-        for f in errorFiles {
-            self.shouldUpdateAudioOutView(self.ac, "Not converted \(f)\n")
         }
     }
     
@@ -187,8 +203,26 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
             break
         default:
-            break
+            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
+            return
         }
+    }
+    
+    
+    func chooseFolderDestination() -> String? {
+        let panel = NSOpenPanel()
+        panel.title = "Choose a folder to save files"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        
+        if panel.runModal() == .OK,
+            let selectedURL = panel.urls.first {
+            return selectedURL.path
+        } else {
+            return nil
+        }
+
     }
     
     
@@ -280,15 +314,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     {
         // Moved row on tableview
         if info.draggingSource as? NSTableView == tableView {
-            // print("MOVING")
-            // print("SELECTED ROWS: \(self.filesTableView.selectedRow)")
             guard let sourceRow = tableView.selectedRowIndexes.first else {
-                //print("RETURNING 1")
                 return false
             }
             
             guard sourceRow != row else {
-                //print("RETURNING 2")
                 return false
             } // Prevent dropping onto the same row
             
@@ -357,37 +387,27 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         // Ensure there is something to delete
         guard !selectedIndexes.isEmpty else { return }
         
-        // let selectedRow = filesTableView.selectedRow
-        // guard selectedRow >= 0 else { return }
         // Convert to an array and delete items from the data source
         let indexesToRemove = selectedIndexes.sorted(by: >) // Sort in descending order
         for index in indexesToRemove {
             files.remove(at: index)
         }
-        // files.remove(at: selectedRow) // Remove from data source
-        // filesTableView.removeRows(at: IndexSet(integer: selectedRow), withAnimation: .effectFade)
+    
         filesTableView.removeRows(at: selectedIndexes, withAnimation: .effectFade)
         playerView.player?.replaceCurrentItem(with: nil)
     }
     
     
     // MARK: AudioConverterDelegate methods
-    func shouldUpdateAudioOutView(_ converter: AudioConverter, _ text: String) {
-        audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: [
-            .font: NSFont.systemFont(ofSize: 14),
-            .foregroundColor: NSColor.lightGray
-        ]))
+    func shouldUpdateAudioOutView(_ text: String) {
+        // let attr = error ?  errorMessageAttributes : succesMessageAttributes
+        audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
         scrollToBottom()
     }
     
     private func scrollToBottom() {
-        // let scrollView = audioOutTextView.enclosingScrollView!
-        // guard let documentView = audioOutScrollView.documentView else { return }
-        // let newScrollOrigin = NSPoint(x: 0, y: documentView.bounds.height - audioOutScrollView.contentView.bounds.height)
-        // audioOutScrollView.contentView.setBoundsOrigin(newScrollOrigin)
         audioOutTextView.scrollRangeToVisible(NSRange(location: audioOutTextView.string.count, length: 0))
     }
-    
     
     
     // MARK: Format Descriptions functions
@@ -476,7 +496,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             }
         }
         
-        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive) \(videoFrameRateString)fps\(movieColorPrimaries), %ibits\n",Int(truncating: movieDepth as! NSNumber ))
+        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as! NSNumber ))
         return videoDescription
     }
     
@@ -567,7 +587,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
-    
 }
 
 
