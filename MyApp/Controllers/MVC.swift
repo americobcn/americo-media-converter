@@ -14,10 +14,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var filesTableView: NSTableView!
     // @IBOutlet weak var navBarView: NSView!
     @IBOutlet weak var playerView: AVPlayerView!
-    @IBOutlet weak var audioOutTextView: NSTextView!
-    @IBOutlet weak var audioOutScrollView: NSScrollView!
     
     // MARK: Audio Outlets
+    @IBOutlet weak var audioOutTextView: NSTextView!
+    @IBOutlet weak var audioOutScrollView: NSScrollView!
     @IBOutlet weak var audioTypeLabel: NSTextField!
     @IBOutlet weak var audioBitsLabel: NSTextField!
     @IBOutlet weak var audioFrequencyLabel: NSTextField!
@@ -26,7 +26,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
     @IBOutlet weak var chooseFolder: NSButton!
     
-    var documentView: NSView!
+    // MARK: Video Outlets
+    @IBOutlet weak var videoOutTextView: NSTextView!
+    @IBOutlet weak var videoOutScrollView: NSScrollView!
+    @IBOutlet weak var videoCodecButton:NSPopUpButton!
+    @IBOutlet weak var videoProfileButton:NSPopUpButton!
+    @IBOutlet weak var videoResolutionButton:NSPopUpButton!
+    @IBOutlet weak var videoContainerButton:NSPopUpButton!
+    
+    // var documentView: NSView!
     
     private var contentView: NSView!
     var navBar: NavigationBarView!
@@ -36,13 +44,21 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         var mfURL: URL
         var formatsDescriptions: [String: Any] = [:] //CMFormatDescription
     }
-        
+    
     var files: [mediaFile] = []
     let mc = MediaController()
     var movieDepth: CFPropertyList?
         
     let vc = VideoConverter()
     var ac: AudioConverter!
+    
+    // MARK: PopUp Button titles
+    let videoCodecs = ["ProRes", "H264"]
+    let proresProfiles = ["HQ", "Standard", "LT"]
+    let h264Profiles = ["High", "Main", "Baseline"]
+    let videoResolution = ["1920x1080", "1280x720", "640x360"]
+    let h264Containers = ["MP4", "MOV"]
+    let proresContainers = ["MOV", "MXF", "MKV"]
     
     
     let regularMessageAttributes: [NSAttributedString.Key: Any] = [
@@ -96,6 +112,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioBitsButton.addItems(withTitles: ["320", "256", "128"])
         audioFrequencyButton.removeAllItems()
         audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
+        videoCodecButton.removeAllItems()
+        videoCodecButton.addItems(withTitles: videoCodecs)
+        videoProfileButton.removeAllItems()
+        videoProfileButton.addItems(withTitles: proresProfiles)
+        videoResolutionButton.removeAllItems()
+        videoResolutionButton.addItems(withTitles: videoResolution)
+        videoContainerButton.removeAllItems()
+        videoContainerButton.addItems(withTitles: proresContainers)
     }
     
     
@@ -182,6 +206,69 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     }
     
 
+    @IBAction func convertVideo(_ sender: NSButton) {
+        if files.count < 1 {
+            return
+        }
+        
+        var arguments: String = ""
+        switch videoCodecButton.title {
+        case "ProRes":
+            var profile = 0
+            switch videoProfileButton.title {
+            case "HQ":
+                profile = 3
+                break
+            case "Standard":
+                profile = 2
+                break
+            case "LT":
+                profile = 1
+                break
+            default:
+                break
+            }
+            print(videoResolutionButton.title)
+            arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -s %@",  profile, videoResolutionButton.title)
+            break
+        
+        case "H264":
+            var videoScale = "1920:1080"
+            switch videoResolutionButton.title {
+            case "1920x1080":
+                videoScale = "1920:1080"
+                break
+            case "1280x720":
+                videoScale = "1280:720"
+                break
+            case "640x360":
+                videoScale = "640:360"
+                break
+                
+            default:
+                break
+            }
+            arguments = String(format: "-c:v libx264 -profile:v %@ -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy", videoProfileButton.title.lowercased(), videoScale)
+            break
+        
+        default:
+            return
+        }
+        
+        for file in files {
+            vc.convertVideo(fileURL: file.mfURL, args: arguments, container: videoContainerButton.title.lowercased()) {
+                success, message in
+                if success {
+                    print(message)
+                } else {
+                    print(message)
+                }
+            }
+        }
+    }
+    
+    
+    
     @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "WAV":
@@ -208,6 +295,26 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         }
     }
     
+    
+    @IBAction func videoCodecChanged(_ sender: NSPopUpButton) {
+        
+        switch sender.title {
+        case "ProRes":
+            videoProfileButton.removeAllItems()
+            videoProfileButton.addItems(withTitles: proresProfiles)
+            videoContainerButton.removeAllItems()
+            videoContainerButton.addItems(withTitles: proresContainers)
+            break
+        case "H264":
+            videoProfileButton.removeAllItems()
+            videoProfileButton.addItems(withTitles: h264Profiles)
+            videoContainerButton.removeAllItems()
+            videoContainerButton.addItems(withTitles: h264Containers)
+            break
+        default:
+            break
+        }
+    }
     
     func chooseFolderDestination() -> String? {
         let panel = NSOpenPanel()

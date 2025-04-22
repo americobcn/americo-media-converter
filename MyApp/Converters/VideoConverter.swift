@@ -8,16 +8,37 @@ class VideoConverter {
     }
     
     
-    func convertVideo(inputPath: String, outputPath: String, format: String, completion: @escaping (Bool, String?) -> Void) {
+    func convertVideo(fileURL: URL,
+                      args: String,
+                      container: String,
+                      completion: @escaping (Bool, String?) -> Void
+    ) {
+        print("Started Converting Video")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
-        let arguments = ["-i", inputPath, "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-c:a", "aac", "-b:a", "192k", outputPath]
-        process.arguments = arguments
+        var arguments = ["-i", fileURL.path]
+        arguments.append(contentsOf: args.components(separatedBy: .whitespaces))
         
+        let newUrl = fileURL.deletingPathExtension().appendingPathExtension(container.lowercased())
+        arguments.append(newUrl.path)
+        process.arguments = arguments
+        // print(process.arguments)
         let outputPipe = Pipe()
+        let inputPipe = Pipe()
+        process.standardInput = inputPipe
         process.standardOutput = outputPipe
         process.standardError = outputPipe
+        
+        let fileHandle = outputPipe.fileHandleForReading
+        fileHandle.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard let output = String(data: data, encoding: .ascii), !output.isEmpty else { return }
+            DispatchQueue.main.async {
+                print(output)
+            }
+        }
+        
         
         process.terminationHandler = { _ in
             let status = process.terminationStatus

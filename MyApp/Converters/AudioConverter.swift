@@ -44,7 +44,6 @@ class AudioConverter {
         self.delegate = delegate
     }
     
-    
     func convertAudio(file: URL,
                       codec: String,
                       args: String,
