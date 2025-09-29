@@ -1,19 +1,41 @@
 import Foundation
+import Cocoa
+
+protocol VideoConverterDelegate: AnyObject {
+    func shouldUpdateVideoOutView( _ text: String)
+}
+
 
 class VideoConverter {
-    let ffmpegPath: String
+    var delegate: VideoConverterDelegate?
     
+    let ffmpegPath: String
     init(ffmpegPath: String = "/usr/local/bin/ffmpeg") {
         self.ffmpegPath = ffmpegPath
     }
     
+    let errorMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.red
+    ]
+    
+    let succesMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.green
+    ]
+    
+    let normalMessageAttributes: [NSAttributedString.Key: Any] = [
+        .font: NSFont.systemFont(ofSize: 12),
+        .foregroundColor: NSColor.lightGray
+    ]
     
     func convertVideo(fileURL: URL,
                       args: String,
+                      textView: NSTextView,
                       container: String,
                       completion: @escaping (Bool, String?) -> Void
     ) {
-        print("Started Converting Video")
+        textView.textStorage?.setAttributedString(NSAttributedString(string: "Started Converting Video", attributes: self.normalMessageAttributes))
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
@@ -35,6 +57,7 @@ class VideoConverter {
             let data = handle.availableData
             guard let output = String(data: data, encoding: .ascii), !output.isEmpty else { return }
             DispatchQueue.main.async {
+                self?.delegate?.shouldUpdateVideoOutView(output)
                 print(output)
             }
         }
@@ -42,26 +65,27 @@ class VideoConverter {
         
         process.terminationHandler = { _ in
             let status = process.terminationStatus
-            completion(status == 0, status == 0 ? nil : "Conversion failed with status code \(status)")
+            DispatchQueue.main.async {
+                switch status {
+                case 0:
+                    textView.textStorage?.append(NSAttributedString(string: "\nSuccess converting \(fileURL.path).\n", attributes: self.succesMessageAttributes))
+                default:
+                    textView.textStorage?.append(NSAttributedString(string: "\nError converting \(fileURL), failed with status code \(status).\n", attributes: self.errorMessageAttributes))
+                }
+            }
+            completion(status == 0, status == 0 ? "Success converting \(fileURL)." : "Error converting \(fileURL), failed with status code \(status).")
         }
+
         
         do {
             try process.run()
         } catch {
-            completion(false, "Failed to start ffmpeg process: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                textView.textStorage?.append(NSAttributedString(string: "\(fileURL): Failed to start conversion process: \(error.localizedDescription)", attributes: self.errorMessageAttributes))
+            }
+            completion(false, "\n\(fileURL): Failed to start conversion process: \(error.localizedDescription)")
         }
+            
     }
 }
-
-// Example Usage:
-/*
-let converter = VideoConverter()
-converter.convertVideo(inputPath: "/path/to/input.mp4", outputPath: "/path/to/output.mov", format: "mov") { success, error in
-    if success {
-        print("Conversion successful!")
-    } else {
-        print("Error: \(error ?? "Unknown error")")
-    }
-}
-*/
 

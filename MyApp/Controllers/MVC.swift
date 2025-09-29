@@ -9,7 +9,7 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate {
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate, VideoConverterDelegate {
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
     // @IBOutlet weak var navBarView: NSView!
@@ -33,6 +33,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var videoProfileButton:NSPopUpButton!
     @IBOutlet weak var videoResolutionButton:NSPopUpButton!
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
+    @IBOutlet weak var videoPadButton: NSButton!
     
     // var documentView: NSView!
     
@@ -102,6 +103,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     func setupOutputView() {
         audioOutTextView.backgroundColor = .black
+        videoOutTextView.backgroundColor = .black
     }
     
     
@@ -120,6 +122,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         videoResolutionButton.addItems(withTitles: videoResolution)
         videoContainerButton.removeAllItems()
         videoContainerButton.addItems(withTitles: proresContainers)
+        videoPadButton.state = .off
     }
     
     
@@ -214,54 +217,36 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         var arguments: String = ""
         switch videoCodecButton.title {
         case "ProRes":
-            var profile = 0
-            switch videoProfileButton.title {
-            case "HQ":
-                profile = 3
-                break
-            case "Standard":
-                profile = 2
-                break
-            case "LT":
-                profile = 1
-                break
-            default:
-                break
+            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
+            if videoPadButton.state == .on {
+                arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2",
+                                   videoProfileButton.title.lowercased(), resolution[0], resolution[1], resolution[0], resolution[1])
+            } else {
+                arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease", videoProfileButton.title.lowercased(), resolution[0], resolution[1])
             }
-            print(videoResolutionButton.title)
-            arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -s %@",  profile, videoResolutionButton.title)
             break
-        
+            
         case "H264":
-            var videoScale = "1920:1080"
-            switch videoResolutionButton.title {
-            case "1920x1080":
-                videoScale = "1920:1080"
-                break
-            case "1280x720":
-                videoScale = "1280:720"
-                break
-            case "640x360":
-                videoScale = "640:360"
-                break
-                
-            default:
-                break
+            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
+            if videoPadButton.state == .on {
+                arguments = String(format: "-c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a copy", resolution[0], resolution[1], resolution[0], resolution[1])
+            } else {
+                arguments = String(format: "-c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
             }
-            arguments = String(format: "-c:v libx264 -profile:v %@ -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy", videoProfileButton.title.lowercased(), videoScale)
             break
         
         default:
             return
         }
-        
+                
+        videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
-            vc.convertVideo(fileURL: file.mfURL, args: arguments, container: videoContainerButton.title.lowercased()) {
+            vc.convertVideo(fileURL: file.mfURL, args: arguments, textView: videoOutTextView, container: videoContainerButton.title.lowercased()) {
                 success, message in
                 if success {
-                    print(message)
+                    print(message ?? "Success")
                 } else {
-                    print(message)
+                    print(message ?? "Error")
                 }
             }
         }
@@ -507,13 +492,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     // MARK: AudioConverterDelegate methods
     func shouldUpdateAudioOutView(_ text: String) {
-        // let attr = error ?  errorMessageAttributes : succesMessageAttributes
         audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
-        scrollToBottom()
+        scrollToBottom(audioOutTextView)
     }
     
-    private func scrollToBottom() {
-        audioOutTextView.scrollRangeToVisible(NSRange(location: audioOutTextView.string.count, length: 0))
+    // MARK: VideoConverterDelegate methods
+    func shouldUpdateVideoOutView(_ text: String) {
+        videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
+        scrollToBottom(videoOutTextView)
+    }
+    
+    private func scrollToBottom(_ textView: NSTextView) {
+        textView.scrollRangeToVisible(NSRange(location: textView.string.count, length: 0))
     }
     
     
@@ -603,7 +593,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             }
         }
         
-        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as! NSNumber ))
+        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as? NSNumber ?? 0 ))
         return videoDescription
     }
     
