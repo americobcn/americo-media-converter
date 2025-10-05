@@ -10,8 +10,10 @@ class VideoConverter {
     var delegate: VideoConverterDelegate?
     
     let ffmpegPath: String
-    init(ffmpegPath: String = "/usr/local/bin/ffmpeg") {
+    init(ffmpegPath: String = "/usr/local/bin/ffmpeg",
+           delegate: VideoConverterDelegate) {
         self.ffmpegPath = ffmpegPath
+        self.delegate = delegate
     }
     
     let errorMessageAttributes: [NSAttributedString.Key: Any] = [
@@ -30,12 +32,11 @@ class VideoConverter {
     ]
     
     func convertVideo(fileURL: URL,
-                      args: String,
-                      textView: NSTextView,
+                      args: String,                      
                       container: String,
                       completion: @escaping (Bool, String?) -> Void
     ) {
-        textView.textStorage?.setAttributedString(NSAttributedString(string: "Started Converting Video", attributes: self.normalMessageAttributes))
+        self.delegate?.shouldUpdateVideoOutView("Started Converting Video")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
@@ -55,9 +56,11 @@ class VideoConverter {
         let fileHandle = outputPipe.fileHandleForReading
         fileHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            guard let output = String(data: data, encoding: .ascii), !output.isEmpty else { return }
+            guard let output = String(data: data, encoding: .utf8), !output.isEmpty else { return }
             DispatchQueue.main.async {
+                // textView.textStorage?.append(NSAttributedString(string: output, attributes: self?.normalMessageAttributes))
                 self?.delegate?.shouldUpdateVideoOutView(output)
+                // self?.scrollToBottom(textView)
                 print(output)
             }
         }
@@ -68,9 +71,11 @@ class VideoConverter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    textView.textStorage?.append(NSAttributedString(string: "\nSuccess converting \(fileURL.path).\n", attributes: self.succesMessageAttributes))
+                    self.delegate?.shouldUpdateVideoOutView("\nSuccess converting \(fileURL.path).\n")
+                    // self.scrollToBottom(textView)
                 default:
-                    textView.textStorage?.append(NSAttributedString(string: "\nError converting \(fileURL), failed with status code \(status).\n", attributes: self.errorMessageAttributes))
+                    self.delegate?.shouldUpdateVideoOutView("\nError converting \(fileURL), failed with status code \(status).\n")
+                    // self.scrollToBottom(textView)
                 }
             }
             completion(status == 0, status == 0 ? "Success converting \(fileURL)." : "Error converting \(fileURL), failed with status code \(status).")
@@ -79,13 +84,19 @@ class VideoConverter {
         
         do {
             try process.run()
+            process.waitUntilExit()
         } catch {
             DispatchQueue.main.async {
-                textView.textStorage?.append(NSAttributedString(string: "\(fileURL): Failed to start conversion process: \(error.localizedDescription)", attributes: self.errorMessageAttributes))
+                self.delegate?.shouldUpdateVideoOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)")
             }
             completion(false, "\n\(fileURL): Failed to start conversion process: \(error.localizedDescription)")
         }
             
     }
+    
+    // private func scrollToBottom(_ textView: NSTextView) {
+    //     textView.scrollRangeToVisible(NSRange(location: textView.string.count, length: 0))
+    // }
+
 }
 

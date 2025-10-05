@@ -1,8 +1,8 @@
 //
 //  AudioConverter.swift
-//  ffmpegui
+//  
 //
-//  Created by Berlin on 19/3/25.
+//  Created by Américo on 19/3/25.
 //
 
 // import Foundation
@@ -15,7 +15,6 @@ protocol AudioConverterDelegate: AnyObject {
 class AudioConverter {
     var delegate: AudioConverterDelegate?
     
-    let lamePath: String
     let ffmpegPath: String
     let afconvertPath: String
     var converter: String = ""
@@ -33,12 +32,10 @@ class AudioConverter {
         .foregroundColor: NSColor.green
     ]
     
-    init(lamePath: String = "/usr/local/bin/lame",
-         ffmpegPath: String = "/usr/local/bin/ffmpeg",
+    init(ffmpegPath: String = "/usr/local/bin/ffmpeg",
          afconvert: String = "/usr/bin/afconvert",
          delegate: AudioConverterDelegate
     ) {
-        self.lamePath = lamePath
         self.ffmpegPath = ffmpegPath
         self.afconvertPath = afconvert
         self.delegate = delegate
@@ -47,7 +44,6 @@ class AudioConverter {
     func convertAudio(file: URL,
                       codec: String,
                       args: String,
-                      textView: NSTextView,
                       destinationFolder: String?,
                       completion: @escaping (Bool, String) -> Void
     ) {
@@ -55,7 +51,8 @@ class AudioConverter {
         var options: Array<String> = []
         switch codec {
         case "MP3":
-            converter = lamePath
+            converter = ffmpegPath
+            options.append("-i")
             newExtension = codec.lowercased()
             break
         default:
@@ -71,12 +68,14 @@ class AudioConverter {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: converter)
         
+        
         let outPath = composeFileURL(of: file, to: newExtension, destinationFolder)
-
+        
         options.append(file.path)
         options.append(contentsOf: args.components(separatedBy: .whitespaces))
         options.append(contentsOf: [outPath])
         process.arguments = options
+        print(options)
         
         let outputPipe = Pipe()
         let inputPipe = Pipe()
@@ -87,7 +86,7 @@ class AudioConverter {
         let fileHandle = outputPipe.fileHandleForReading
         fileHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            guard let output = String(data: data, encoding: .ascii), !output.isEmpty else { return }
+            guard let output = String(data: data, encoding: .utf8), !output.isEmpty else { return }
             DispatchQueue.main.async {
                 self?.delegate?.shouldUpdateAudioOutView(output)
             }
@@ -98,21 +97,22 @@ class AudioConverter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    textView.textStorage?.append(NSAttributedString(string: "\nSuccess converting \(file.path).\n", attributes: self.succesMessageAttributes))
+                    self.delegate?.shouldUpdateAudioOutView("\nSuccess converting \(file.path).\n")
                 default:
-                    textView.textStorage?.append(NSAttributedString(string: "\nError converting \(file), failed with status code \(status).\n", attributes: self.errorMessageAttributes))
+                    self.delegate?.shouldUpdateAudioOutView("\nError converting \(file), failed with status code \(status).\n")
                 }
             }
-            completion(status == 0, status == 0 ? "Success converting \(file)." : "Error converting \(file), failed with status code \(status).")
+            // completion(status == 0, status == 0 ? "Success converting \(file)." : "Error converting \(file), failed with status code \(status).")
         }
         
         do {
             try process.run()
+            process.waitUntilExit()
         } catch {
             DispatchQueue.main.async {
-                textView.textStorage?.append(NSAttributedString(string: "\(file): Failed to start conversion process: \(error.localizedDescription)", attributes: self.errorMessageAttributes))
+                self.delegate?.shouldUpdateAudioOutView("\(file): Failed to start conversion process: \(error.localizedDescription)")
             }
-            completion(false, "\n\(file): Failed to start conversion process: \(error.localizedDescription)")
+            // completion(false, "\n\(file): Failed to start conversion process: \(error.localizedDescription)")
         }
     }
     

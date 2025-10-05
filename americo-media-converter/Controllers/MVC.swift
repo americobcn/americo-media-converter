@@ -9,7 +9,7 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate, VideoConverterDelegate {
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate, VideoConverterDelegate, ConverterDelegate {
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
     // @IBOutlet weak var navBarView: NSView!
@@ -38,8 +38,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     // var documentView: NSView!
     
     private var contentView: NSView!
-    var navBar: NavigationBarView!
-        
+    // var navBar: NavigationBarView!
+    
     // MARK: Media related variables
     struct mediaFile {
         var mfURL: URL
@@ -49,9 +49,19 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     var files: [mediaFile] = []
     let mc = MediaController()
     var movieDepth: CFPropertyList?
-        
-    let vc = VideoConverter()
+    
+    enum ConversionType {
+        case audio
+        case video
+    }
+    
+    var newAudioExtension: String = ""
+    var newVideoExtension: String = ""
+    var vc: VideoConverter!
     var ac: AudioConverter!
+    var cv: Converter!
+    var conversionType: ConversionType!
+    
     
     // MARK: PopUp Button titles
     let videoCodecs = ["ProRes", "H264"]
@@ -81,6 +91,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         ac = AudioConverter(delegate: self)
+        vc = VideoConverter(delegate: self)
+        cv = Converter(delegate: self)
         
     }
     
@@ -111,7 +123,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         audioTypeButton.removeAllItems()
         audioTypeButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
         audioBitsButton.removeAllItems()
-        audioBitsButton.addItems(withTitles: ["320", "256", "128"])
+        audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
         audioFrequencyButton.removeAllItems()
         audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
         videoCodecButton.removeAllItems()
@@ -133,39 +145,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         filesTableView.allowsMultipleSelection = true
         filesTableView.rowHeight = 60
     }
-   
-    
-    /*
-    func setupNavBar() {
-        contentView = NSView(frame: NSRect(x: 750, y: 20, width: 800, height: 550))
-        view.addSubview(contentView)
-        
-        let homeView = NSView(frame: contentView.bounds)
-        homeView.wantsLayer = true
-        homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
-        //
-        let settingsView = NSView(frame: contentView.bounds)
-        settingsView.wantsLayer = true
-        settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
-        //
-        let profileView = NSView(frame: contentView.bounds)
-        profileView.wantsLayer = true
-        profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
-        
-        navBar = NavigationBarView(frame: NSRect(x: 0, y: 0, width: navBarView.bounds.width  , height: navBarView.bounds.height),
-                                   views: [])
-        navBar.delegate = self
-        navBarView.addSubview(navBar)
-        
-    }
-    */
     
     
     //MARK: IBAction Methods
     @IBAction func convertAudio(_ sender: NSButton) {
+        audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+        
         if files.count < 1 {
             return
         }
+        
+        conversionType = ConversionType.audio
         
         var destinationFolder: String?
         if chooseFolder.state == .on {
@@ -177,102 +167,162 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         } else {
             destinationFolder = nil
         }
-                
+        
         var arguments: String = ""
-    
+        
         switch audioTypeButton.title {
         case "WAV":
-            arguments = String(format: "-v -f BW64 -d LEI%@@%@ -o", audioBitsButton.title ,audioFrequencyButton.title) // AFCONVERT
+            // arguments = String(format: "-v -f BW64 -d LEI%@@%@ -o", audioBitsButton.title ,audioFrequencyButton.title) // AFCONVERT
+            if audioBitsButton.title == "24" {
+                arguments = String(format: "-y -sample_fmt s32 -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioFrequencyButton.title ) // FFMPEG
+            } else {
+                arguments = String(format: "-y -sample_fmt s%@ -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioBitsButton.title, audioFrequencyButton.title )
+                //arguments = String(format: "-sample_fmt s%@ -ar %@", audioBitsButton.title, audioFrequencyButton.title ) // FFMPEG
+            }
+            
         case "AAC":
-            // arguments = String(format: "-codec:a %@ -b:a %@k",  audioTypeButton.title.lowercased(), audioBitsButton.title.lowercased()) //FFMPEG
-            arguments = String(format: "-v -f m4af -d aac -s 0 -b %@000 -o", audioBitsButton.title)  // AFCONVERT
+            let bufferSize = Int(audioBitsButton.title)! * 2
+            arguments = String(format: "-y -vn -c:a aac -b:a %@k -maxrate %@k -bufsize %@k -ar %@", audioBitsButton.title, audioBitsButton.title, String(bufferSize), audioFrequencyButton.title) //FFMPEG
+            // arguments = String(format: "-v -f m4af -d aac -s 0 -b %@000 -o", audioBitsButton.title)  // AFCONVERT
             break
         case "MP3":
-            arguments = String(format: "-b %@ -o", audioBitsButton.title) // LAME
+            //arguments = String(format: "-b %@ -o", audioBitsButton.title) // LAME
+            arguments = String(format: "-y -codec:a libmp3lame -b:a %@k -ar %@", audioBitsButton.title, audioFrequencyButton.title) //FFMPEG
             break
         default:
             audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
             return
         }
         
+        switch audioTypeButton.title {
+            case "MP3":
+                newAudioExtension = "mp3"
+                break
+            case "AAC":
+                newAudioExtension = "m4a"
+                break
+            default:
+                newAudioExtension = "wav"
+                break
+        }
+        
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
-            ac.convertAudio(file: file.mfURL, codec: audioTypeButton.title, args: arguments, textView: audioOutTextView, destinationFolder: destinationFolder) {
-                success, message in
+            let outPath = composeFileURL(of: file.mfURL, to: newAudioExtension, destinationFolder)
+            // arguments.append(outPath)
+            cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
+                success, message, exitCode in
                 if success {
-                    print(message)
+                    print(exitCode)
+                    print(message ?? "Success")
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: self.succesMessageAttributes))
                 } else {
-                    print(message)
+                    print(exitCode)
+                    print(message ?? "Error")
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: self.errorMessageAttributes))
                 }
             }
         }
+        // for file in files {
+        //     ac.convertAudio(file: file.mfURL, codec: audioTypeButton.title, args: arguments, destinationFolder: destinationFolder) {
+        //         success, message in
+        //         if success {
+        //             print(message)
+        //         } else {
+        //             print(message)
+        //         }
+        //     }
+        // }
     }
     
-
+    
     @IBAction func convertVideo(_ sender: NSButton) {
+        videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         if files.count < 1 {
             return
         }
+        
+        conversionType = ConversionType.video
         
         var arguments: String = ""
         switch videoCodecButton.title {
         case "ProRes":
             let resolution = videoResolutionButton.title.components(separatedBy: .letters)
             if videoPadButton.state == .on {
-                arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2",
+                arguments = String(format: "-y -c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2",
                                    videoProfileButton.title.lowercased(), resolution[0], resolution[1], resolution[0], resolution[1])
             } else {
-                arguments = String(format: "-c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease", videoProfileButton.title.lowercased(), resolution[0], resolution[1])
+                arguments = String(format: "-y -c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease", videoProfileButton.title.lowercased(), resolution[0], resolution[1])
             }
             break
             
         case "H264":
             let resolution = videoResolutionButton.title.components(separatedBy: .letters)
             if videoPadButton.state == .on {
-                arguments = String(format: "-c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a copy", resolution[0], resolution[1], resolution[0], resolution[1])
+                arguments = String(format: "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a copy", resolution[0], resolution[1], resolution[0], resolution[1])
             } else {
-                arguments = String(format: "-c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
+                arguments = String(format: "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
             }
             break
-        
+            
         default:
             return
         }
-                
-        videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+        
+        newVideoExtension = videoContainerButton.title.lowercased() // Default extension
         for file in files {
-            vc.convertVideo(fileURL: file.mfURL, args: arguments, textView: videoOutTextView, container: videoContainerButton.title.lowercased()) {
-                success, message in
+            videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: regularMessageAttributes))
+            let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, nil)
+            cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
+                success, message, exitCode in
                 if success {
+                    print(exitCode)
                     print(message ?? "Success")
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: self.succesMessageAttributes))
                 } else {
+                    print(exitCode)
                     print(message ?? "Error")
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: self.errorMessageAttributes))
                 }
             }
         }
+        
+        // for file in files {
+        //     vc.convertVideo(fileURL: file.mfURL, args: arguments, container: videoContainerButton.title.lowercased()) {
+        //         success, message in
+        //         if success {
+        //             print(message ?? "Success")
+        //         } else {
+        //             print(message ?? "Error")
+        //         }
+        //     }
+        // }
     }
-    
     
     
     @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "WAV":
-            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to WAV\n"))
             audioBitsLabel.stringValue = "Bit Depth"
             audioBitsButton.removeAllItems()
             audioBitsButton.addItems(withTitles: ["24", "16", "32"])
+            audioFrequencyButton.removeAllItems()
+            audioFrequencyButton.addItems(withTitles: ["96000","48000","44100"])
+            audioFrequencyButton.selectItem(at: 1)
             break
         case "AAC":
-            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to AAC\n"))
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
             audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            audioFrequencyButton.removeAllItems()
+            audioFrequencyButton.addItems(withTitles: ["48000","44100"])
             break
-        case "MP3":
-            audioOutTextView.textStorage?.append(NSAttributedString(string: "Changed to MP3\n"))
+        case "MP3":            
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
             audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            audioFrequencyButton.removeAllItems()
+            audioFrequencyButton.addItems(withTitles: ["48000","44100"])
             break
         default:
             audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
@@ -321,8 +371,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     // MARK: NavigationBarDelegate methods
     func didSelectView(_ view: NSView) {
         print("Button tapped: \(view)")
-        // contentView.subviews.forEach { $0.removeFromSuperview() }
-        // contentView.addSubview(view)
     }
     
     
@@ -502,8 +550,37 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         scrollToBottom(videoOutTextView)
     }
     
+    // MARK: ConverterDelegate methods
+    func shouldUpdateOutView(_ text: String) {
+        switch conversionType {
+            case .audio:
+                audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
+                scrollToBottom(audioOutTextView)
+            case .video:
+                videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
+                scrollToBottom(videoOutTextView)
+            default:
+                audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: regularMessageAttributes))
+                videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: regularMessageAttributes))
+        }
+    }
+    
+    
     private func scrollToBottom(_ textView: NSTextView) {
         textView.scrollRangeToVisible(NSRange(location: textView.string.count, length: 0))
+    }
+    
+    
+    /* PRIVATE FUNCTIONS */
+    private func composeFileURL(of filePath: URL, to newExtension: String, _ destinationFolder: String?) -> String {
+        if destinationFolder != nil {
+            let url = URL(fileURLWithPath: destinationFolder! + "/" + filePath.lastPathComponent)
+            let newUrl = url.deletingPathExtension().appendingPathExtension(newExtension)
+            return newUrl.path
+        }
+
+        let newUrl = filePath.deletingPathExtension().appendingPathExtension(newExtension)
+        return newUrl.path
     }
     
     
@@ -596,6 +673,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as? NSNumber ?? 0 ))
         return videoDescription
     }
+    
     
     func getAudioTrackDescription(audioFormatDesc: CMFormatDescription) -> String {
         var audioDescription = ""
