@@ -51,6 +51,7 @@ xcuserdata/
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
 
-./Resources
+americo-media-converter/Resources/
+
 
 
