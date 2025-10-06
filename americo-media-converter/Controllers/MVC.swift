@@ -35,10 +35,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
     @IBOutlet weak var videoPadButton: NSButton!
     
-    // var documentView: NSView!
-    
     private var contentView: NSView!
-    // var navBar: NavigationBarView!
+    
     
     // MARK: Media related variables
     struct mediaFile {
@@ -71,6 +69,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     let h264Containers = ["MP4", "MOV"]
     let proresContainers = ["MOV", "MXF", "MKV"]
     
+    enum MessageAttribute {
+        case regular
+        case error
+        case succes
+    }
     
     let regularMessageAttributes: [NSAttributedString.Key: Any] = [
         .font: NSFont.systemFont(ofSize: 12),
@@ -558,17 +561,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     }
     
     // MARK: ConverterDelegate methods
-    func shouldUpdateOutView(_ text: String) {
+    func shouldUpdateOutView(_ text: String, attr: [NSAttributedString.Key: Any]) {
         switch conversionType {
             case .audio:
-                audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
+                audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
                 scrollToBottom(audioOutTextView)
             case .video:
-                videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
+                videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
                 scrollToBottom(videoOutTextView)
             default:
-                audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: regularMessageAttributes))
-                videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: regularMessageAttributes))
+            audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: errorMessageAttributes))
+            videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: errorMessageAttributes))
         }
     }
     
