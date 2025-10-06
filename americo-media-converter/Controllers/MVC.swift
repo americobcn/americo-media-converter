@@ -238,12 +238,19 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     @IBAction func convertVideo(_ sender: NSButton) {
         videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+        
         if files.count < 1 {
             return
         }
         
         conversionType = ConversionType.video
         
+        var destinationFolder: String?
+        destinationFolder = chooseFolderDestination()
+        if destinationFolder == nil {
+            return
+        }
+            
         var arguments: String = ""
         switch videoCodecButton.title {
         case "ProRes":
@@ -272,7 +279,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         newVideoExtension = videoContainerButton.title.lowercased() // Default extension
         for file in files {
             videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: regularMessageAttributes))
-            let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, nil)
+            let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, destinationFolder)
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
@@ -761,6 +768,28 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
+    }
+    
+    func checkFFmpeg() -> Bool{
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+        task.arguments = ["ffmpeg"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        try? task.run()
+        task.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let path = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) {
+            print("ffmpeg found at: \(path)")
+            //self.ffmpegPath = path
+            return true
+        } else {
+            print("ffmpeg not found in PATH")
+            return false
+        }
     }
 }
 
