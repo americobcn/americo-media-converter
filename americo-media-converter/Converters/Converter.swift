@@ -8,39 +8,33 @@
 import Cocoa
 
 
-
 protocol ConverterDelegate: AnyObject {
     func shouldUpdateOutView( _ text: String, _ attr: [NSAttributedString.Key: Any])
 }
 
+
 class Converter {
     var delegate: ConverterDelegate?
+    var ffmpegURL: URL!
     
-    let ffmpegURL: URL!
+    
     init(delegate: ConverterDelegate) {
-        self.ffmpegURL = Bundle.main.url(forResource: "ffmpeg", withExtension: nil)
+        self.ffmpegURL = nil // Bundle.main.url(forResource: "ffmpeg", withExtension: nil)
         self.delegate = delegate
+        setup()
     }
     
-    let errorMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.red
-    ]
+    private func setup() {
+        if !checkFFmpeg() {
+            _ = dropAlert()
+            NSApplication.shared.terminate(nil)
+        }
+    }
     
-    let succesMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.green
-    ]
-    
-    let normalMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.lightGray
-    ]
     
     func convert(fileURL: URL,
                  args: String,
                  outPath: String,
-                 // container: String?,
                  completion: @escaping (Bool, String?, Int32) -> Void
     ) {
         self.delegate?.shouldUpdateOutView("Start Converting\n",  succesMessageAttributes)
@@ -56,7 +50,7 @@ class Converter {
         process.arguments = arguments
         print("arguments: \(arguments)")
         let outputPipe = Pipe()
-    
+        
         process.standardOutput = outputPipe
         process.standardError = outputPipe
         
@@ -76,27 +70,62 @@ class Converter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n",  self.succesMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n",  succesMessageAttributes)
                     
                 default:
-                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n",  self.errorMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n",  errorMessageAttributes)
                 }
             }
-            // completion(status == 0, status == 0 ? "Success converting \(fileURL)." : "Error converting \(fileURL), failed with status code \(status).", process.terminationStatus)
         }
-                
+        
         do {
             print(process.executableURL ?? "No executable", process.arguments ?? "No args")
             try process.run()
             process.waitUntilExit()
         } catch {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", self.errorMessageAttributes)
+                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", errorMessageAttributes)
             }
-            // completion(false, "\n\(fileURL): Failed to start conversion process: \(error.localizedDescription)", process.terminationStatus)
         }
     }
     
-
+    func checkFFmpeg() -> Bool {
+        self.ffmpegURL = Bundle.main.url(forResource: "ffmpeg", withExtension: nil)
+        if  self.ffmpegURL != nil {
+            return true
+        } else {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+            task.arguments = ["ffmpeg"]
+            
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            try? task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if data.isEmpty {
+                return false
+            }
+            
+            if let path = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) {
+                self.ffmpegURL = URL(fileURLWithPath: path)
+                return true
+            } else {
+                return false
+            }
+        }
+    }
+    
+    
+    func dropAlert() -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "ffmpeg is missing"
+        alert.informativeText = "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+    
 }
-

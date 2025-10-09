@@ -13,7 +13,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
-    // @IBOutlet weak var navBarView: NSView!
+
     @IBOutlet weak var playerView: AVPlayerView!
     
     // MARK: Audio Outlets
@@ -51,8 +51,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     var newAudioExtension: String = ""
     var newVideoExtension: String = ""
-    // var vc: VideoConverter!
-    // var ac: AudioConverter!
     var cv: Converter!
     var conversionType: ConversionType!
     
@@ -84,7 +82,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         cv = Converter(delegate: self)
-        
     }
     
     
@@ -94,6 +91,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         setupConverterView()
         setupPlayerView()
         setupOutputView()
+        
     }
     
     
@@ -752,28 +750,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
-    
-    func checkFFmpeg() -> Bool {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        task.arguments = ["ffmpeg"]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        try? task.run()
-        task.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        if let path = String(data: data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) {
-            print("ffmpeg found at: \(path)")
-            //self.ffmpegPath = path
-            return true
-        } else {
-            print("ffmpeg not found in PATH")
-            return false
-        }
-    }
 }
 
 
@@ -791,4 +767,5 @@ extension FourCharCode {
         let characterSet = CharacterSet.whitespaces
         return result.trimmingCharacters(in: characterSet)
     }
+    
 }
