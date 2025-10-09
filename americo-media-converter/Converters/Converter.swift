@@ -7,23 +7,10 @@
 
 import Cocoa
 
-let regularMessageAttributes: [NSAttributedString.Key: Any] = [
-    .font: NSFont.systemFont(ofSize: 12),
-    .foregroundColor: NSColor.lightGray
-]
 
-let errorMessageAttributes: [NSAttributedString.Key: Any] = [
-    .font: NSFont.systemFont(ofSize: 12),
-    .foregroundColor: NSColor.red
-]
-
-let succesMessageAttributes: [NSAttributedString.Key: Any] = [
-    .font: NSFont.systemFont(ofSize: 12),
-    .foregroundColor: NSColor.green
-]
 
 protocol ConverterDelegate: AnyObject {
-    func shouldUpdateOutView( _ text: String, attr: [NSAttributedString.Key: Any])
+    func shouldUpdateOutView( _ text: String, _ attr: [NSAttributedString.Key: Any])
 }
 
 class Converter {
@@ -56,7 +43,7 @@ class Converter {
                  // container: String?,
                  completion: @escaping (Bool, String?, Int32) -> Void
     ) {
-        self.delegate?.shouldUpdateOutView("Start Converting\n", attr: succesMessageAttributes)
+        self.delegate?.shouldUpdateOutView("Start Converting\n",  succesMessageAttributes)
         
         let process = Process()
         process.executableURL = ffmpegURL
@@ -78,7 +65,7 @@ class Converter {
             let data = handle.availableData
             guard let output = String(data: data, encoding: .utf8), !output.isEmpty else { return }
             DispatchQueue.main.async {
-                self?.delegate?.shouldUpdateOutView(output, attr: regularMessageAttributes)
+                self?.delegate?.shouldUpdateOutView(output,  regularMessageAttributes)
                 print(output)
             }
         }
@@ -89,10 +76,10 @@ class Converter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n", attr: self.succesMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n",  self.succesMessageAttributes)
                     
                 default:
-                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n", attr: self.errorMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n",  self.errorMessageAttributes)
                 }
             }
             // completion(status == 0, status == 0 ? "Success converting \(fileURL)." : "Error converting \(fileURL), failed with status code \(status).", process.terminationStatus)
@@ -104,7 +91,7 @@ class Converter {
             process.waitUntilExit()
         } catch {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", attr: self.errorMessageAttributes)
+                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", self.errorMessageAttributes)
             }
             // completion(false, "\n\(fileURL): Failed to start conversion process: \(error.localizedDescription)", process.terminationStatus)
         }

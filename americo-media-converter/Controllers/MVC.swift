@@ -9,7 +9,8 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NavigationBarDelegate, AudioConverterDelegate, VideoConverterDelegate, ConverterDelegate {
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , ConverterDelegate { // NavigationBarDelegate
+    
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
     // @IBOutlet weak var navBarView: NSView!
@@ -48,15 +49,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     let mc = MediaController()
     var movieDepth: CFPropertyList?
     
-    enum ConversionType {
-        case audio
-        case video
-    }
-    
     var newAudioExtension: String = ""
     var newVideoExtension: String = ""
-    var vc: VideoConverter!
-    var ac: AudioConverter!
+    // var vc: VideoConverter!
+    // var ac: AudioConverter!
     var cv: Converter!
     var conversionType: ConversionType!
     
@@ -68,13 +64,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     let videoResolution = ["1920x1080", "1280x720", "640x360"]
     let h264Containers = ["MP4", "MOV"]
     let proresContainers = ["MOV", "MXF", "MKV"]
-    
-    enum MessageAttribute {
-        case regular
-        case error
-        case succes
-    }
-    
+            
     let regularMessageAttributes: [NSAttributedString.Key: Any] = [
         .font: NSFont.systemFont(ofSize: 12),
         .foregroundColor: NSColor.lightGray
@@ -93,8 +83,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        ac = AudioConverter(delegate: self)
-        vc = VideoConverter(delegate: self)
         cv = Converter(delegate: self)
         
     }
@@ -158,7 +146,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             return
         }
         
-        conversionType = ConversionType.audio
+        conversionType = .audio
         
         var destinationFolder: String?
         if chooseFolder.state == .on {
@@ -226,16 +214,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
                 }
             }
         }
-        // for file in files {
-        //     ac.convertAudio(file: file.mfURL, codec: audioTypeButton.title, args: arguments, destinationFolder: destinationFolder) {
-        //         success, message in
-        //         if success {
-        //             print(message)
-        //         } else {
-        //             print(message)
-        //         }
-        //     }
-        // }
     }
     
     
@@ -246,7 +224,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             return
         }
         
-        conversionType = ConversionType.video
+        conversionType = .video
         
         var destinationFolder: String?
         destinationFolder = chooseFolderDestination()
@@ -296,17 +274,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
                 }
             }
         }
-        
-        // for file in files {
-        //     vc.convertVideo(fileURL: file.mfURL, args: arguments, container: videoContainerButton.title.lowercased()) {
-        //         success, message in
-        //         if success {
-        //             print(message ?? "Success")
-        //         } else {
-        //             print(message ?? "Error")
-        //         }
-        //     }
-        // }
     }
     
     
@@ -379,9 +346,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     
     
     // MARK: NavigationBarDelegate methods
-    func didSelectView(_ view: NSView) {
-        print("Button tapped: \(view)")
-    }
+    // func didSelectView(_ view: NSView) {
+    //     print("Button tapped: \(view)")
+    // }
     
     
     // MARK:  TableView Datasource Methods
@@ -532,6 +499,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         }
     }
     
+    
     private func deleteSelectedRow() {
         let selectedIndexes = filesTableView.selectedRowIndexes
         // Ensure there is something to delete
@@ -548,20 +516,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
     }
     
     
-    // MARK: AudioConverterDelegate methods
-    func shouldUpdateAudioOutView(_ text: String) {
-        audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
-        scrollToBottom(audioOutTextView)
-    }
-    
-    // MARK: VideoConverterDelegate methods
-    func shouldUpdateVideoOutView(_ text: String) {
-        videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: regularMessageAttributes))
-        scrollToBottom(videoOutTextView)
-    }
-    
     // MARK: ConverterDelegate methods
-    func shouldUpdateOutView(_ text: String, attr: [NSAttributedString.Key: Any]) {
+    func shouldUpdateOutView(_ text: String, _ attr: [NSAttributedString.Key: Any]) {
         switch conversionType {
             case .audio:
                 audioOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
@@ -617,7 +573,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         var videoDescription: String = ""
         var movieColorPrimaries = ""
         var movieCodec = ""
-        
+        let mediaSubType = CMFormatDescriptionGetMediaSubType(videoFormatDesc).toString()
+        // print("MEDIA SUB TYPE: \(mediaSubType)")
+        // print("MEDIA SUB TYPE: \(videoFormatDesc.mediaSubType)")
         //Getting video descriptors
         let movieDimensions =  CMVideoFormatDescriptionGetDimensions(videoFormatDesc)
         if let tempPrimaries = CMFormatDescriptionGetExtension(videoFormatDesc, extensionKey: kCMFormatDescriptionExtension_ColorPrimaries) {
@@ -655,23 +613,44 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         //Standarizing video codec name
         if let formatName = CMFormatDescriptionGetExtension(videoFormatDesc, extensionKey: kCMFormatDescriptionExtension_FormatName)
         {
-            switch formatName as! String
+             // switch formatName as! String
+            switch mediaSubType
             {
-            case "'apch'":
+            case "apch":
                 movieCodec = "Apple ProRes 422 (HQ)"
                 break
-            case "'avc1'",
-                "'x264'":
+            case "apcn":
+                movieCodec = "Apple ProRes Standard"
+                break
+            case "apcs":
+                movieCodec = "Apple ProRes LT"
+                break
+            case "apco":
+                movieCodec = "Apple ProRes Proxy"
+                break
+            case "ap4h":
+                movieCodec = "Apple ProRes 4444"
+                break
+            case "ap4x":
+                movieCodec = "Apple ProRes 4444 XQ"
+                break
+            case "avc1",
+                "h264",
+                "V264",
+                "H264",
+                "AVC1",
+                "AVCB",
+                "x264":
                 movieCodec = "H.264"
                 break
-            case "'mpg4'",
-                "'mp4v'":
+            case "mpg4",
+                "mp4v":
                 movieCodec = "MPEG-4 Video"
                 break
-            case "'hev1'":
+            case "hev1":
                 movieCodec = "HEVC(hev1 tag not readable)"
                 break
-            case "'hvc1'":
+            case "hvc1":
                 movieCodec = "HEVC"
                 break
             default:
@@ -735,6 +714,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
             formatIDDescription = "AMR"
             break
         default:
+            formatIDDescription = "Not available"
             break
         }
         
@@ -773,7 +753,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, Navigat
         return audioDescription
     }
     
-    func checkFFmpeg() -> Bool{
+    func checkFFmpeg() -> Bool {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
         task.arguments = ["ffmpeg"]
