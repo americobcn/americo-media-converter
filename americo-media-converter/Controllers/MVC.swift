@@ -2,7 +2,7 @@
 //  MVC.swift
 //  MyApp
 //
-//  Created by Américo Cot Toloza on 21/3/25.
+//  Created by Américo Cot on 21/3/25.
 //
 
 import Cocoa
@@ -307,7 +307,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     @IBAction func videoCodecChanged(_ sender: NSPopUpButton) {
-        
         switch sender.title {
         case "ProRes":
             videoProfileButton.removeAllItems()
@@ -326,6 +325,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
     }
     
+    
+    @IBAction func openPreferences(_ sender: NSMenuItem) {
+        if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+            appDelegate.showPreferences()
+        }
+    }
+    
+    
     func chooseFolderDestination() -> String? {
         let panel = NSOpenPanel()
         panel.title = "Choose a folder to save files"
@@ -341,12 +348,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
 
     }
-    
-    
-    // MARK: NavigationBarDelegate methods
-    // func didSelectView(_ view: NSView) {
-    //     print("Button tapped: \(view)")
-    // }
     
     
     // MARK:  TableView Datasource Methods

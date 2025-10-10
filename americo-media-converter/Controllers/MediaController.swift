@@ -2,7 +2,7 @@
 //  MediaController.swift
 //  MyApp
 //
-//  Created by Américo Cot Toloza on 23/3/25.
+//  Created by Américo Cot on 23/3/25.
 //
 
 import Foundation

@@ -11,14 +11,22 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet var window: NSWindow!
-
-
+    private var preferencesWindowController: PreferencesWindowController?
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
         window.minSize.width = 1920
         
     }
-
+    
+    @objc func showPreferences() {
+        if preferencesWindowController == nil {
+            preferencesWindowController = PreferencesWindowController()
+        }
+        preferencesWindowController?.showWindow(nil)
+        preferencesWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+    
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
     }
@@ -27,6 +35,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-
 }
-

@@ -2,7 +2,7 @@
 //  GlobalTypes.swift
 //  americo-media-converter
 //
-//  Created by Lisboa on 9/10/25.
+//  Created by Américo Cot on 9/10/25.
 //
 
 import Cocoa
