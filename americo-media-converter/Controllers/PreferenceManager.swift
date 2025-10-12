@@ -53,7 +53,7 @@ class PreferencesWindowController: NSWindowController {
     
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 350),
+            contentRect: NSRect(x: 0, y: 0, width: 632, height: 350),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -101,7 +101,7 @@ class PreferencesViewController: NSViewController {
         // Notifications Tab
         let notificationsTab = NSTabViewItem(identifier: "notifications")
         notificationsTab.label = "Notifications"
-        // notificationsTab.viewController = NotificationsPreferencesViewController()
+        notificationsTab.viewController = NotificationsPreferencesViewController()
         tabView.addTabViewItem(notificationsTab)
         
         view.addSubview(tabView)
@@ -188,6 +188,70 @@ class GeneralPreferencesViewController: NSViewController {
     }
 }
 
+// MARK: - Notifications Preferences View Controller
+class NotificationsPreferencesViewController: NSViewController {
+    
+    private let prefs = PreferencesManager.shared
+    private var notificationsCheckbox: NSButton!
+    private var statusLabel: NSTextField!
+    
+    override func loadView() {
+        self.view = NSView(frame: NSRect(x: 0, y: 0, width: 480, height: 300))
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        loadPreferences()
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(preferencesDidReset),
+            name: NSNotification.Name("PreferencesDidReset"),
+            object: nil
+        )
+    }
+    
+    private func setupUI() {
+        // Notifications Checkbox
+        notificationsCheckbox = NSButton(checkboxWithTitle: "Enable Notifications", target: self, action: #selector(notificationsChanged))
+        notificationsCheckbox.frame = NSRect(x: 20, y: 250, width: 200, height: 20)
+        view.addSubview(notificationsCheckbox)
+        
+        // Status Label
+        statusLabel = NSTextField(labelWithString: "")
+        statusLabel.frame = NSRect(x: 20, y: 220, width: 440, height: 20)
+        statusLabel.textColor = .secondaryLabelColor
+        statusLabel.isEditable = false
+        statusLabel.isBordered = false
+        statusLabel.backgroundColor = .clear
+        view.addSubview(statusLabel)
+    }
+    
+    private func loadPreferences() {
+        notificationsCheckbox.state = prefs.isNotificationsEnabled ? .on : .off
+        updateStatusLabel()
+    }
+    
+    private func updateStatusLabel() {
+        statusLabel.stringValue = prefs.isNotificationsEnabled ?
+            "Notifications are enabled for this app" :
+            "Notifications are disabled"
+    }
+    
+    @objc private func notificationsChanged() {
+        prefs.isNotificationsEnabled = notificationsCheckbox.state == .on
+        updateStatusLabel()
+    }
+    
+    @objc private func preferencesDidReset() {
+        loadPreferences()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+}
 
 
 /*

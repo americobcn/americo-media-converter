@@ -25,7 +25,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBOutlet weak var audioTypeButton:NSPopUpButton!
     @IBOutlet weak var audioBitsButton:NSPopUpButton!
     @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
-    @IBOutlet weak var chooseFolder: NSButton!
+    
     
     // MARK: Video Outlets
     @IBOutlet weak var videoOutTextView: NSTextView!
@@ -63,20 +63,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     let h264Containers = ["MP4", "MOV"]
     let proresContainers = ["MOV", "MXF", "MKV"]
             
-    let regularMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.lightGray
-    ]
-    
-    let errorMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.red
-    ]
-    
-    let succesMessageAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12),
-        .foregroundColor: NSColor.green
-    ]
+    let prefs = PreferencesManager.shared
     
     // MARK: Initializers
     required init?(coder: NSCoder) {
@@ -146,15 +133,22 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         conversionType = .audio
         
+        // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
-        if chooseFolder.state == .on {
+        
+        if prefs.defaultAudioDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
-            if destinationFolder == nil {
-                return
-            }
-            print("Choosing folder: \(String(describing: destinationFolder))")
         } else {
-            destinationFolder = nil
+            //Check if the preferences destination folder exists and is writable
+            if checkDestinationPath(destPath: prefs.defaultAudioDestination) {
+                destinationFolder = prefs.defaultAudioDestination
+            } else {
+                destinationFolder = chooseFolderDestination()
+            }
+        }
+        
+        if destinationFolder == nil {
+            return
         }
         
         var arguments: String = ""
@@ -204,11 +198,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 if success {
                     print(exitCode)
                     print(message ?? "Success")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: self.succesMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: succesMessageAttributes))
                 } else {
                     print(exitCode)
                     print(message ?? "Error")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: self.errorMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: errorMessageAttributes))
                 }
             }
         }
@@ -224,8 +218,19 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         conversionType = .video
         
+        // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
-        destinationFolder = chooseFolderDestination()
+        if prefs.defaultVideoDestination.isEmpty {
+            destinationFolder = chooseFolderDestination()
+        } else {
+            //Check if the preferences destination folder exists and is writable
+            if checkDestinationPath(destPath: prefs.defaultVideoDestination) {
+                destinationFolder = prefs.defaultVideoDestination
+            } else {
+                destinationFolder = chooseFolderDestination()
+            }
+        }
+        
         if destinationFolder == nil {
             return
         }
@@ -264,11 +269,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 if success {
                     print(exitCode)
                     print(message ?? "Success")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: self.succesMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: succesMessageAttributes))
                 } else {
                     print(exitCode)
                     print(message ?? "Error")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: self.errorMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: errorMessageAttributes))
                 }
             }
         }
@@ -346,8 +351,28 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         } else {
             return nil
         }
-
     }
+    
+    private func checkDestinationPath(destPath: String) -> Bool {
+        let directoryURL = URL(fileURLWithPath: destPath)
+        do {
+            let resourceValues = try directoryURL.resourceValues(forKeys: [.isDirectoryKey, .isWritableKey])
+            if (resourceValues.isDirectory != nil && resourceValues.isWritable != nil)  {
+                print("The directory exists and we have write permissions.")
+                return true
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Destination path in preferences is not available or writable."
+            alert.informativeText = "Choose a valid folder."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            print("An error occurred, choosing destination folder.")
+        }
+        return false
+    }
+        
     
     
     // MARK:  TableView Datasource Methods
