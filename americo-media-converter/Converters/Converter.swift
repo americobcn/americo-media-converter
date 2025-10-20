@@ -16,18 +16,24 @@ protocol ConverterDelegate: AnyObject {
 class Converter {
     var delegate: ConverterDelegate?
     var ffmpegURL: URL!
+    var ffprobeURL: URL!
     
-    
+        
     init(delegate: ConverterDelegate) {
-        self.ffmpegURL = nil // Bundle.main.url(forResource: "ffmpeg", withExtension: nil)
+        self.ffmpegURL = nil
+        self.ffprobeURL = nil
         self.delegate = delegate
         setup()
     }
     
     private func setup() {
         if !checkFFmpeg() {
-            _ = dropAlert()
+            _ = dropAlert(message: "ffmpeg is missing", informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
             NSApplication.shared.terminate(nil)
+        }
+        
+        if !checkFFprobe() {
+            _ = dropAlert(message: "ffprobe is missing", informative: "Some info will not be available until you install ffprobe binary in Resources folder of the app.\nIf ffprobe is located in /usr/local/bin/ffprobe, copy the binary in the Resources folder of the app.")
         }
     }
     
@@ -118,11 +124,40 @@ class Converter {
         }
     }
     
+    func checkFFprobe() -> Bool {
+        self.ffprobeURL = Bundle.main.url(forResource: "ffprobe", withExtension: nil)
+        if  self.ffprobeURL != nil {
+            return true
+        } else {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+            task.arguments = ["ffprobe"]
+            
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            try? task.run()
+            task.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if data.isEmpty {
+                return false
+            }
+            
+            if let path = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) {
+                self.ffprobeURL = URL(fileURLWithPath: path)
+                return true
+            } else {
+                return false
+            }
+        }
+    }
     
-    func dropAlert() -> Bool {
+    
+    func dropAlert(message: String, informative: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "ffmpeg is missing"
-        alert.informativeText = "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app."
+        alert.messageText = message
+        alert.informativeText = informative
         alert.alertStyle = .warning
         alert.addButton(withTitle: "OK")
         return alert.runModal() == .alertFirstButtonReturn

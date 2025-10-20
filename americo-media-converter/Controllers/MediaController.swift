@@ -13,9 +13,14 @@ class MediaController: NSObject {
     var urlAsset: AVURLAsset!
     var videoFormatDesc: CMFormatDescription!
     var audioFormatDesc: CMFormatDescription!
+    var format: [String:Any] = [:]
     
     func isAVMediaType(url: URL) -> (isPlayable: Bool, formats: [String: Any]) {
-        var format: [String:Any] = [:]
+        let extensions: Set<String> = ["ogg", "weba", "webm", "eac3", "adx", "aea", "amr", "g722"]
+        if extensions.contains(url.pathExtension.lowercased()) {
+            return (isPlayable: true, formats: [:])
+        }
+        
         let urlAsset = AVURLAsset(url: url)
         if urlAsset.isPlayable {
             format = getMetadata(asset: urlAsset)

@@ -42,7 +42,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     // MARK: Media related variables
     struct mediaFile {
         var mfURL: URL
-        var formatsDescriptions: [String: Any] = [:] //CMFormatDescription
+        var formatDescription: [String: Any] = [:] //CMFormatDescription
     }
     
     var files: [mediaFile] = []
@@ -390,7 +390,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             else { return nil }
             viewCell.fileNameLabel.stringValue = files[row].mfURL.lastPathComponent
             viewCell.fileInfoLabel.stringValue = getFormatDescription(row: row)
-            if files[row].formatsDescriptions.keys.contains("videoDesc") {
+            if files[row].formatDescription.keys.contains("videoDesc") {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "video", accessibilityDescription: nil)
             } else {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "hifispeaker", accessibilityDescription: nil)
@@ -485,10 +485,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                     if mfInfo.0 == true {
                         let mfFile: mediaFile! = mediaFile(
                             mfURL: URL(fileURLWithPath: url.path!),
-                            formatsDescriptions: mfInfo.1
+                            formatDescription: mfInfo.1
                         )
                         files.append(mfFile)
                     }
+                    
                 }
             }
             
@@ -577,14 +578,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     // MARK: Format Descriptions functions
     func getFormatDescription(row: Int) -> String {
         var description: String = ""
-        for (key, _) in files[row].formatsDescriptions {
+        for (key, _) in files[row].formatDescription {
             if key == "videoDesc" {
-                description += getVideoTrackDescription(videoFormatDesc: files[row].formatsDescriptions["videoDesc"] as! CMFormatDescription,
-                                                        rate: files[row].formatsDescriptions["rate"] as! Float)
+                description += getVideoTrackDescription(videoFormatDesc: files[row].formatDescription["videoDesc"] as! CMFormatDescription,
+                                                        rate: files[row].formatDescription["rate"] as! Float)
             }
             
             if key == "audioDesc" {
-                description += getAudioTrackDescription(audioFormatDesc: files[row].formatsDescriptions["audioDesc"] as! CMFormatDescription)
+                description += getAudioTrackDescription(audioFormatDesc: files[row].formatDescription["audioDesc"] as! CMFormatDescription)
             }
         }
         
@@ -776,7 +777,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
         return audioDescription
     }
+    
+    
 }
+
 
 
 extension FourCharCode {
