@@ -37,19 +37,26 @@ class MediaController {
             process.standardOutput = outputPipe
             process.standardError = outputPipe
                     
-            
             do {
                 try process.run()
                 process.waitUntilExit()
                 let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                    if let output = String(data: data, encoding: .utf8) {
-                        print(output)
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                            // print("Swift Dict: \(dictionary)")
+                            format = dictionary
+                        }
+                    } catch {
+                        print("Failed to parse JSON: $$error.localizedDescription)")
                     }
+
                 } catch {
                     print("Failed to run process: $$error)")
                 }
-        
-            return (isPlayable: true, formats: [:])
+            
+            //  TODO: Convert ffprobe json to CMFormatDescription
+            print("self.format: \(format)")
+            return (isPlayable: true, formats: format)
         }
         
         let urlAsset = AVURLAsset(url: url)

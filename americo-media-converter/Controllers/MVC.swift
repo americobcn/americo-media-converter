@@ -155,14 +155,12 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         switch audioTypeButton.title {
         case "WAV":
-            // arguments = String(format: "-v -f BW64 -d LEI%@@%@ -o", audioBitsButton.title ,audioFrequencyButton.title) // AFCONVERT
             if audioBitsButton.title == "24" {
                 arguments = String(format: "-y -sample_fmt s32 -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioFrequencyButton.title ) // FFMPEG
             } else {
                 arguments = String(format: "-y -sample_fmt s%@ -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioBitsButton.title, audioFrequencyButton.title )
-                //arguments = String(format: "-sample_fmt s%@ -ar %@", audioBitsButton.title, audioFrequencyButton.title ) // FFMPEG
             }
-            
+            break
         case "AAC":
             let bufferSize = Int(audioBitsButton.title)! * 2
             arguments = String(format: "-y -vn -c:a aac -b:a %@k -maxrate %@k -bufsize %@k -ar %@", audioBitsButton.title, audioBitsButton.title, String(bufferSize), audioFrequencyButton.title) //FFMPEG
@@ -207,6 +205,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
         }
     }
+    
     
     
     @IBAction func convertVideo(_ sender: NSButton) {
@@ -280,6 +279,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "WAV":
@@ -311,6 +311,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     @IBAction func videoCodecChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "ProRes":
@@ -331,11 +332,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     @IBAction func openPreferences(_ sender: NSMenuItem) {
         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
             appDelegate.showPreferences()
         }
     }
+    
     
     
     func chooseFolderDestination() -> String? {
@@ -352,6 +355,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             return nil
         }
     }
+    
+    
     
     private func checkDestinationPath(destPath: String) -> Bool {
         let directoryURL = URL(fileURLWithPath: destPath)
@@ -408,6 +413,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     // MARK:  TableView Delegate Methods
     func tableViewSelectionDidChange(_ notification: Notification) {
         let tableView = notification.object as! NSTableView
@@ -421,11 +427,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     func tableView(_ tableView: NSTableView,
                    pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
     {
         return files[row].mfURL as NSURL
     }
+    
     
     
     func tableView(_ tableView: NSTableView,
@@ -444,6 +452,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
         return []
     }
+    
     
     
     func tableView(
@@ -489,16 +498,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                         )
                         files.append(mfFile)
                     }
-                    
                 }
             }
-            
             tableView.reloadData()
             return true
         }
         
         return false
     }
+    
     
     
     // MARK: Keyboard event handlers
@@ -516,6 +524,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     private func playPause() {
         if playerView.player?.rate == 0.0  {
             playerView.player?.play()
@@ -523,6 +532,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             playerView.player?.pause()
         }
     }
+    
     
     
     private func deleteSelectedRow() {
@@ -541,6 +551,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     // MARK: ConverterDelegate methods
     func shouldUpdateOutView(_ text: String, _ attr: [NSAttributedString.Key: Any]) {
         switch conversionType {
@@ -557,12 +568,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     private func scrollToBottom(_ textView: NSTextView) {
         textView.scrollRangeToVisible(NSRange(location: textView.string.count, length: 0))
     }
     
     
-    /* PRIVATE FUNCTIONS */
+        
     private func composeFileURL(of filePath: URL, to newExtension: String, _ destinationFolder: String?) -> String {
         if destinationFolder != nil {
             let url = URL(fileURLWithPath: destinationFolder! + "/" + filePath.lastPathComponent)
@@ -575,6 +587,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
+    
     // MARK: Format Descriptions functions
     func getFormatDescription(row: Int) -> String {
         var description: String = ""
@@ -582,15 +595,20 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             if key == "videoDesc" {
                 description += getVideoTrackDescription(videoFormatDesc: files[row].formatDescription["videoDesc"] as! CMFormatDescription,
                                                         rate: files[row].formatDescription["rate"] as! Float)
-            }
-            
-            if key == "audioDesc" {
+            } else if key == "audioDesc" {
                 description += getAudioTrackDescription(audioFormatDesc: files[row].formatDescription["audioDesc"] as! CMFormatDescription)
+            } else {
+                if let formatDesc = files[row].formatDescription["format"] as? NSDictionary {
+                    if let long_name = formatDesc["format_long_name"] {
+                        description = long_name as! String
+                    }
+                }
             }
         }
         
         return description
     }
+    
     
     
     func getVideoTrackDescription(videoFormatDesc: CMFormatDescription, rate: Float) -> String {
@@ -607,6 +625,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             movieColorPrimaries = tempPrimaries as! String
             movieColorPrimaries = ", " + movieColorPrimaries
         }
+        
         if let tempFields = CMFormatDescriptionGetExtension(videoFormatDesc, extensionKey: kCMFormatDescriptionExtension_FieldCount) {
             let movieFieldCount = tempFields
             if Int(truncating: movieFieldCount as! NSNumber) == 1 {
