@@ -15,7 +15,7 @@
 		1EEA4B6C2D8DC220005152DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6B2D8DC220005152DF /* Assets.xcassets */; };
 		1EEA4B6F2D8DC220005152DF /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6D2D8DC220005152DF /* MainMenu.xib */; };
 		1EEA4B772D8DC324005152DF /* MVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA4B762D8DC324005152DF /* MVC.swift */; };
-		2283A53C2E97B37900806232 /* GlobalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2283A53B2E97B37400806232 /* GlobalTypes.swift */; };
+		2283A53C2E97B37900806232 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2283A53B2E97B37400806232 /* Constants.swift */; };
 		DA9E4E4A2E990A3600CD961B /* PreferenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9E4E492E990A3600CD961B /* PreferenceManager.swift */; };
 /* End PBXBuildFile section */
 
@@ -30,7 +30,7 @@
 		1EEA4B6E2D8DC220005152DF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		1EEA4B702D8DC220005152DF /* americo-media-converter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "americo-media-converter.entitlements"; sourceTree = "<group>"; };
 		1EEA4B762D8DC324005152DF /* MVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MVC.swift; sourceTree = "<group>"; };
-		2283A53B2E97B37400806232 /* GlobalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalTypes.swift; sourceTree = "<group>"; };
+		2283A53B2E97B37400806232 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DA9E4E492E990A3600CD961B /* PreferenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -72,7 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				DA9E4E492E990A3600CD961B /* PreferenceManager.swift */,
-				2283A53B2E97B37400806232 /* GlobalTypes.swift */,
+				2283A53B2E97B37400806232 /* Constants.swift */,
 				1EEA4B762D8DC324005152DF /* MVC.swift */,
 				1E3B81082D9010CC003FABF5 /* MediaController.swift */,
 			);
@@ -217,7 +217,7 @@
 			files = (
 				1E3B81092D9010CC003FABF5 /* MediaController.swift in Sources */,
 				1EEA4B772D8DC324005152DF /* MVC.swift in Sources */,
-				2283A53C2E97B37900806232 /* GlobalTypes.swift in Sources */,
+				2283A53C2E97B37900806232 /* Constants.swift in Sources */,
 				DA9E4E4A2E990A3600CD961B /* PreferenceManager.swift in Sources */,
 				1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */,
 				1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */,

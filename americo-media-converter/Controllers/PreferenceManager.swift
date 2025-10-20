@@ -21,7 +21,8 @@ class PreferencesManager {
     
     private init() {}
     
-    // MARK: - Getters
+    
+    // MARK: - Getters and Setters
     var defaultVideoDestination: String {
         get { defaults.string(forKey: Keys.defaultVideoDestination) ?? "" }
         set { defaults.set(newValue, forKey: Keys.defaultVideoDestination) }
@@ -48,9 +49,9 @@ class PreferencesManager {
 }
 
 
+
 // MARK: - Preferences Window Controller
 class PreferencesWindowController: NSWindowController {
-    
     convenience init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 632, height: 350),
@@ -72,6 +73,7 @@ class PreferencesWindowController: NSWindowController {
         super.windowDidLoad()
     }
 }
+
 
 
 // MARK: - Preferences View Controller with Tab View
@@ -107,6 +109,7 @@ class PreferencesViewController: NSViewController {
         view.addSubview(tabView)
     }
 }
+
 
 
 // MARK: - General Preferences View Controller
@@ -187,6 +190,8 @@ class GeneralPreferencesViewController: NSViewController {
         NotificationCenter.default.post(name: NSNotification.Name("PreferencesDidReset"), object: nil)
     }
 }
+
+
 
 // MARK: - Notifications Preferences View Controller
 class NotificationsPreferencesViewController: NSViewController {

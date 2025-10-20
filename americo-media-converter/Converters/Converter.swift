@@ -16,25 +16,19 @@ protocol ConverterDelegate: AnyObject {
 class Converter {
     var delegate: ConverterDelegate?
     var ffmpegURL: URL!
-    var ffprobeURL: URL!
     
-        
     init(delegate: ConverterDelegate) {
         self.ffmpegURL = nil
-        self.ffprobeURL = nil
         self.delegate = delegate
         setup()
     }
     
     private func setup() {
         if !checkFFmpeg() {
-            _ = dropAlert(message: "ffmpeg is missing", informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
+            _ = Constants.dropAlert(message: "ffmpeg is missing", informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
             NSApplication.shared.terminate(nil)
         }
-        
-        if !checkFFprobe() {
-            _ = dropAlert(message: "ffprobe is missing", informative: "Some info will not be available until you install ffprobe binary in Resources folder of the app.\nIf ffprobe is located in /usr/local/bin/ffprobe, copy the binary in the Resources folder of the app.")
-        }
+                
     }
     
     
@@ -43,7 +37,7 @@ class Converter {
                  outPath: String,
                  completion: @escaping (Bool, String?, Int32) -> Void
     ) {
-        self.delegate?.shouldUpdateOutView("Start Converting\n",  succesMessageAttributes)
+        self.delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)
         
         let process = Process()
         process.executableURL = ffmpegURL
@@ -65,7 +59,7 @@ class Converter {
             let data = handle.availableData
             guard let output = String(data: data, encoding: .utf8), !output.isEmpty else { return }
             DispatchQueue.main.async {
-                self?.delegate?.shouldUpdateOutView(output,  regularMessageAttributes)
+                self?.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
                 print(output)
             }
         }
@@ -76,10 +70,10 @@ class Converter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n",  succesMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.path).\n",  Constants.MessageAttribute.succesMessageAttributes)
                     
                 default:
-                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n",  errorMessageAttributes)
+                    self.delegate?.shouldUpdateOutView("\nError converting \(fileURL), failed with status code \(status).\n",  Constants.MessageAttribute.errorMessageAttributes)
                 }
             }
         }
@@ -90,7 +84,7 @@ class Converter {
             process.waitUntilExit()
         } catch {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", errorMessageAttributes)
+                self.delegate?.shouldUpdateOutView("\(fileURL): Failed to start conversion process: \(error.localizedDescription)", Constants.MessageAttribute.errorMessageAttributes)
             }
         }
     }
@@ -124,43 +118,15 @@ class Converter {
         }
     }
     
-    func checkFFprobe() -> Bool {
-        self.ffprobeURL = Bundle.main.url(forResource: "ffprobe", withExtension: nil)
-        if  self.ffprobeURL != nil {
-            return true
-        } else {
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-            task.arguments = ["ffprobe"]
-            
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            try? task.run()
-            task.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if data.isEmpty {
-                return false
-            }
-            
-            if let path = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines) {
-                self.ffprobeURL = URL(fileURLWithPath: path)
-                return true
-            } else {
-                return false
-            }
-        }
-    }
+        
     
-    
-    func dropAlert(message: String, informative: String) -> Bool {
-        let alert = NSAlert()
-        alert.messageText = message
-        alert.informativeText = informative
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
-        return alert.runModal() == .alertFirstButtonReturn
-    }
+//    func dropAlert(message: String, informative: String) -> Bool {
+//        let alert = NSAlert()
+//        alert.messageText = message
+//        alert.informativeText = informative
+//        alert.alertStyle = .warning
+//        alert.addButton(withTitle: "OK")
+//        return alert.runModal() == .alertFirstButtonReturn
+//    }
     
 }

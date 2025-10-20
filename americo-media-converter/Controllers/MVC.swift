@@ -52,7 +52,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     var newAudioExtension: String = ""
     var newVideoExtension: String = ""
     var cv: Converter!
-    var conversionType: ConversionType!
+    var conversionType: Constants.ConversionType!
     
     
     // MARK: PopUp Button titles
@@ -67,7 +67,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     // MARK: Initializers
     required init?(coder: NSCoder) {
-        super.init(coder: coder)
+        super.init(coder: coder)        
         cv = Converter(delegate: self)
     }
     
@@ -173,7 +173,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             arguments = String(format: "-y -codec:a libmp3lame -b:a %@k -ar %@", audioBitsButton.title, audioFrequencyButton.title) //FFMPEG
             break
         default:
-            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
+            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: Constants.MessageAttribute.errorMessageAttributes))
             return
         }
         
@@ -198,11 +198,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 if success {
                     print(exitCode)
                     print(message ?? "Success")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: succesMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
                     print(exitCode)
                     print(message ?? "Error")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: errorMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
         }
@@ -262,18 +262,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         newVideoExtension = videoContainerButton.title.lowercased() // Default extension
         for file in files {
-            videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: regularMessageAttributes))
+            videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: Constants.MessageAttribute.regularMessageAttributes))
             let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, destinationFolder)
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
                     print(exitCode)
                     print(message ?? "Success")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: succesMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
                     print(exitCode)
                     print(message ?? "Error")
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: errorMessageAttributes))
+                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
         }
@@ -305,7 +305,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             audioFrequencyButton.addItems(withTitles: ["48000","44100"])
             break
         default:
-            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: errorMessageAttributes))
+            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: Constants.MessageAttribute.errorMessageAttributes))
             return
         }
     }
@@ -551,8 +551,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
                 scrollToBottom(videoOutTextView)
             default:
-            audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: errorMessageAttributes))
-            videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: errorMessageAttributes))
+            audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
+            videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
         }
     }
     
