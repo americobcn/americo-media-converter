@@ -8,7 +8,7 @@
 import Cocoa
 
 struct Constants {
-    let ffmpegSupportedExtensions: Set<String> = [
+    static let ffmpegSupportedExtensions: Set<String> = [
         // Video formats
         "mp4", "m4v", "mkv", "webm", "mov", "avi", "wmv", "flv", "f4v",
         "swf", "mpg", "mpeg", "m2v", "3gp", "3g2", "mxf", "roq", "nsv",

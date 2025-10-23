@@ -617,7 +617,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         var movieColorPrimaries = ""
         var movieCodec = ""
         let mediaSubType = CMFormatDescriptionGetMediaSubType(videoFormatDesc).toString()
-        // print("MEDIA SUB TYPE: \(mediaSubType)")
+        print("MEDIA SUB TYPE: \(mediaSubType)")
         // print("MEDIA SUB TYPE: \(videoFormatDesc.mediaSubType)")
         //Getting video descriptors
         let movieDimensions =  CMVideoFormatDescriptionGetDimensions(videoFormatDesc)
@@ -657,50 +657,50 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         //Standarizing video codec name
         if let formatName = CMFormatDescriptionGetExtension(videoFormatDesc, extensionKey: kCMFormatDescriptionExtension_FormatName)
         {
-             // switch formatName as! String
-            switch mediaSubType
-            {
-            case "apch":
-                movieCodec = "Apple ProRes 422 (HQ)"
-                break
-            case "apcn":
-                movieCodec = "Apple ProRes Standard"
-                break
-            case "apcs":
-                movieCodec = "Apple ProRes LT"
-                break
-            case "apco":
-                movieCodec = "Apple ProRes Proxy"
-                break
-            case "ap4h":
-                movieCodec = "Apple ProRes 4444"
-                break
-            case "ap4x":
-                movieCodec = "Apple ProRes 4444 XQ"
-                break
-            case "avc1",
-                "h264",
-                "V264",
-                "H264",
-                "AVC1",
-                "AVCB",
-                "x264":
-                movieCodec = "H.264"
-                break
-            case "mpg4",
-                "mp4v":
-                movieCodec = "MPEG-4 Video"
-                break
-            case "hev1":
-                movieCodec = "HEVC(hev1 tag not readable)"
-                break
-            case "hvc1":
-                movieCodec = "HEVC"
-                break
-            default:
-                movieCodec = formatName as! String
-                break
-            }
+            switch mediaSubType.lowercased()
+                {
+                case "apch":
+                    movieCodec = "Apple ProRes 422 (HQ)"
+                    break
+                case "apcn":
+                    movieCodec = "Apple ProRes Standard"
+                    break
+                case "apcs":
+                    movieCodec = "Apple ProRes LT"
+                    break
+                case "apco":
+                    movieCodec = "Apple ProRes Proxy"
+                    break
+                case "ap4h":
+                    movieCodec = "Apple ProRes 4444"
+                    break
+                case "ap4x":
+                    movieCodec = "Apple ProRes 4444 XQ"
+                    break
+                case "avc1",
+                    "h264",
+                    "v264",
+                    "avcb",
+                    "x264":
+                    movieCodec = "H.264"
+                    break
+                case "mpg4",
+                    "mp4v":
+                    movieCodec = "MPEG-4 Video"
+                    break
+                case "hev1":
+                    movieCodec = "HEVC(hev1 tag not readable)"
+                    break
+                case "hvc1":
+                    movieCodec = "HEVC"
+                    break
+                case "theo":                    
+                    movieCodec = "Theora"
+                    break
+                default:
+                    movieCodec = formatName as! String
+                    break
+                }
         }
         
         videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as? NSNumber ?? 0 ))
@@ -756,6 +756,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             break
         case kAudioFormatAMR:
             formatIDDescription = "AMR"
+            break
+        case "vorb".toFourCharCode():
+            formatIDDescription = "Vorbis"
             break
         default:
             formatIDDescription = "Not available"
@@ -817,4 +820,21 @@ extension FourCharCode {
         return result.trimmingCharacters(in: characterSet)
     }
     
+    
 }
+
+
+extension String {
+    func toFourCharCode() -> FourCharCode? {
+        guard self.count == 4 else {
+            return nil
+        }
+        
+        var result: FourCharCode = 0
+        for char in self.utf8 {
+            result = (result << 8) | FourCharCode(char)
+        }
+        return result
+    }
+}
+

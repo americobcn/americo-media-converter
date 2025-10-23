@@ -62,6 +62,7 @@ class MediaController {
         let duration: String?
         let bitRate: String?
         let nbFrames: String?
+        let formatLongName: String?
         
         enum CodingKeys: String, CodingKey {
             case index, profile, level, refs, duration
@@ -94,6 +95,7 @@ class MediaController {
             case startTime = "start_time"
             case bitRate = "bit_rate"
             case nbFrames = "nb_frames"
+            case formatLongName = "format_long_name"
         }
     }
 
@@ -118,6 +120,7 @@ class MediaController {
     }
 
     
+    
     init() {
         self.ffprobeURL = nil
         if !checkFFprobe() {
@@ -129,85 +132,75 @@ class MediaController {
     
     
     
+    //MARK: Check if file is a valid media file and return file metadata
     func isAVMediaType(url: URL) -> (isPlayable: Bool, formats: [String: Any]) {
         let urlAsset = AVURLAsset(url: url)
         if urlAsset.isPlayable {
             format = getMetadata(asset: urlAsset)
-            // print("FORMAT: \(format)\n")
             return (isPlayable: true, formats: format)
         }
         
-        
-        if Constants.ffmpegSupportedExtensions.contains(url.pathExtension.lowercased()) {
-            let task = Process()
-            let outputPipe = Pipe()
-            let errorPipe = Pipe()
-            task.standardOutput = outputPipe
-            task.standardError = errorPipe
-            
-            task.executableURL = ffmpegURL
-            task.arguments = ["-ss", "00:29:59", "-i", url.path, "-f", "null", "-"]
+        if isValidFFmpegCandidate(url, checkFileExists: true ) {
             do {
-                try task.run()
-                task.waitUntilExit()
-            } catch {
-                // let error = String(decoding: task.standardError, as: UTF8.self)
-                print("Error")
-            }
-            
-            let status = task.terminationStatus
-            print("status: \(status)")
-            
-            // if status == 0 {
-            //     let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            //     let output = String(decoding: outputData, as: UTF8.self)
-            //     print("output: \(output)")
-            //     print("Playable")
-            // } else {
-            //     print("Not Playable")
-            // }
-            
-            // print("Status: \(task.terminationStatus)")
-            //
-            
-            //
-            // let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-            // let error = String(decoding: errorData, as: UTF8.self)
-            // print("Error: \(error)")
-            
-        }
-/*
-            let process = Process()
-            process.executableURL = ffprobeURL
-            let arguments = "-v quiet -show_format -show_streams -print_format json \(url.path)"  // ffprobe -v quiet -show_format -show_streams -print_format json input.mp4
-            process.arguments = arguments.components(separatedBy: .whitespaces)
-            
-            let outputPipe = Pipe()
-            process.standardOutput = outputPipe
-            process.standardError = outputPipe
-            
-            do {
-                try process.run()
-                process.waitUntilExit()
-                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                let jsonData = try getFFprobeJSON(for: url)
+                let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
+                print("JSONDATA: \(ffprobeOutput)")
                 do {
-                    if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                        print("CMFD: \(dictionary)")
-                        return (isPlayable: true, formats: dictionary)
-                    } catch {
-                        print("Failed to parse JSON: $$error.localizedDescription)")
-                    } catch {
-                        print("Failed to run process: $$error)")
+                    let formatDescriptions = try createFormatDescriptions(from: jsonData)
+                    var format: [String:Any] = [:]
+                    print("Format Desc: \(formatDescriptions)")
+                    for desc in formatDescriptions {
+                        switch CMFormatDescriptionGetMediaType(desc) {
+                            case kCMMediaType_Video:
+                                format["videoDesc"] = desc
+                                format["rate"] = getFrameRate(jsonData)  //Float(0.0)
+                                format["icon"] = "video"
+                                break
+                                
+                            case kCMMediaType_Audio:
+                                format["audioDesc"] = desc
+                                format["icon"] = "hifispeaker"
+                                break
+                                
+                            case kCMMediaType_TimeCode:
+                                format["tcDesc"] = desc
+                                break
+                            
+                            default:
+                                return (isPlayable: false, formats: [:])
+                            
+                        }
                     }
+                    
+                    return (isPlayable: true, formats: format)
+                    
                 } catch {
-                    print("Failed to run process: $$error)")
+                    return (isPlayable: false, formats: [:])
                 }
+                
+            } catch {
+                return (isPlayable: false, formats: [:])
             }
         }
-*/
         
+        return (isPlayable: false, formats: [:])
+    }
+    
+    
+    func getFrameRate(_ data: Data) -> Float {
+        let decoder = JSONDecoder()
+        var res: Float = 0.0
+        do {
+            let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
+            print("ffprobeOutput: \(ffprobeOutput.streams[0].rFrameRate!)")
+            if let numbers = ffprobeOutput.streams[0].rFrameRate!.components(separatedBy: "/") {
+                res = Float(numbers.first) / Float(numbers.last)
+            }
+        } catch {
+            print("ERROR")
+        }
         
-        return (isPlayable: false, formats: format)
+        return res
     }
     
     
@@ -222,12 +215,15 @@ class MediaController {
             switch track.mediaType {
             case .video:
                 videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
+                // print("Video Format Desc: \(videoFormatDesc)")
                 formats["videoDesc"] = videoFormatDesc
                 formats["rate"] = track.nominalFrameRate
                 formats["icon"] = "video"
                 break
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
+//                print("Audio Format Desc: \(audioFormatDesc)")
+                
                 formats["audioDesc"] = audioFormatDesc
                 formats["icon"] = "hifispeaker"
                 break
@@ -284,7 +280,75 @@ class MediaController {
     }
     
     
+    func getFFprobeJSON(for url: URL) throws -> Data {
+        let process = Process()
+        process.executableURL = ffprobeURL // URL(fileURLWithPath: "/usr/local/bin/ffprobe")
+        process.arguments = [
+            "-v", "quiet",
+            "-show_format",
+            "-show_streams",
+            "-print_format", "json",
+            url.path
+        ]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return data
+    }
     
+    
+    func checkFFprobeFile(for url: URL) throws -> Int32 {
+        let process = Process()
+        process.executableURL = ffprobeURL  //URL(fileURLWithPath: "/usr/local/bin/ffprobe")
+        process.arguments = [
+            "-ss",
+            "00:29:59",
+            "-i",
+            url.path,
+            "-f",
+            "null",
+            "-"
+        ]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        try process.run()
+        process.waitUntilExit()
+            
+        return process.terminationStatus
+    }
+    
+    
+    
+    func isValidFFmpegCandidate(_ fileURL: URL, checkFileExists: Bool = true) -> Bool {
+        // Optional file existence check
+        if checkFileExists && fileURL.isFileURL {
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                return false
+            }
+            
+            // Check if it's actually a file (not a directory)
+            var isDirectory: ObjCBool = false
+            FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory)
+            guard !isDirectory.boolValue else {
+                return false
+            }
+        }
+        
+        let fileExtension = fileURL.pathExtension.lowercased()
+        
+        guard !fileExtension.isEmpty else {
+            return false
+        }
+        
+        return Constants.ffmpegSupportedExtensions.contains(fileExtension)
+    }
     // MARK: - Conversion Functions
 
     enum FormatDescriptionError: Error {
@@ -341,6 +405,13 @@ class MediaController {
         
         var extensions: [String: Any] = [:]
         
+        if let avg_frame_rate = stream.avgFrameRate {
+            extensions["AvgFrameRate"] = avg_frame_rate
+        }
+        
+        if let formatName = stream.codecLongName {
+            extensions["FormatName"] = formatName
+        }
         // Add color information if available
         if let colorPrimaries = stream.colorPrimaries {
             extensions[kCVImageBufferColorPrimariesKey as String] = colorPrimaries
@@ -472,20 +543,20 @@ class MediaController {
             return kCMVideoCodecType_AppleProRes422
 //        case "dnxhd":
 //            return CMVideoCodecType(kCMVideoCodecType_DVCPROHD)
-        case "aac":
-            return kAudioFormatMPEG4AAC
-        case "mp3":
-            return kAudioFormatMPEGLayer3
-        case "pcm_s16le", "pcm_s16be":
-            return kAudioFormatLinearPCM
-        case "pcm_f32le", "pcm_f32be":
-            return kAudioFormatLinearPCM
-        case "flac":
-            return kAudioFormatFLAC
-        case "alac":
-            return kAudioFormatAppleLossless
-        case "opus":
-            return kAudioFormatOpus
+//        case "aac":
+//            return kAudioFormatMPEG4AAC
+//        case "mp3":
+//            return kAudioFormatMPEGLayer3
+//        case "pcm_s16le", "pcm_s16be":
+//            return kAudioFormatLinearPCM
+//        case "pcm_f32le", "pcm_f32be":
+//            return kAudioFormatLinearPCM
+//        case "flac":
+//            return kAudioFormatFLAC
+//        case "alac":
+//            return kAudioFormatAppleLossless
+//        case "opus":
+//            return kAudioFormatOpus
 //        case "vorbis":
 //            return kAudioFormatVorbis
         default:
@@ -497,28 +568,7 @@ class MediaController {
                    FourCharCode(chars[3].asciiValue ?? 0)
         }
     }
-
     
-    
-    func getFFprobeJSON(for url: URL) throws -> Data {
-        let process = Process()
-        process.executableURL = ffprobeURL
-        process.arguments = [
-            "-v", "quiet",
-            "-show_format",
-            "-show_streams",
-            "-print_format", "json",
-            url.path
-        ]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        try process.run()
-        process.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return data
-    }
 
 }
 
@@ -551,4 +601,37 @@ func processFFprobeOutput(jsonData: Data) {
         print("Error processing FFprobe output: \(error)")
     }
 }
+
 */
+
+
+/*
+            let process = Process()
+            process.executableURL = ffprobeURL
+            let arguments = "-v quiet -show_format -show_streams -print_format json \(url.path)"  // ffprobe -v quiet -show_format -show_streams -print_format json input.mp4
+            process.arguments = arguments.components(separatedBy: .whitespaces)
+            
+            let outputPipe = Pipe()
+            process.standardOutput = outputPipe
+            process.standardError = outputPipe
+            
+            do {
+                try process.run()
+                process.waitUntilExit()
+                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+                do {
+                    if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                        print("CMFD: \(dictionary)")
+                        return (isPlayable: true, formats: dictionary)
+                    } catch {
+                        print("Failed to parse JSON: $$error.localizedDescription)")
+                    } catch {
+                        print("Failed to run process: $$error)")
+                    }
+                } catch {
+                    print("Failed to run process: $$error)")
+                }
+            }
+        }
+*/
+        
