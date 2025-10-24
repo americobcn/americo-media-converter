@@ -187,20 +187,24 @@ class MediaController {
     }
     
     
+    
     func getFrameRate(_ data: Data) -> Float {
         let decoder = JSONDecoder()
-        var res: Float = 0.0
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
             print("ffprobeOutput: \(ffprobeOutput.streams[0].rFrameRate!)")
-            if let numbers = ffprobeOutput.streams[0].rFrameRate!.components(separatedBy: "/") {
-                res = Float(numbers.first) / Float(numbers.last)
+            let formula = ffprobeOutput.streams[0].rFrameRate
+            let expression = NSExpression(format: formula!)
+            if let result = expression.toFloatingPoint().expressionValue(with: nil, context: nil) as? Float {
+                print(result) // Output: 5
+                return result
             }
+            
         } catch {
             print("ERROR")
         }
         
-        return res
+        return 0.0
     }
     
     
@@ -571,6 +575,52 @@ class MediaController {
     
 
 }
+
+
+//MARK: - NSExpression extension
+
+extension NSExpression {
+    func toFloatingPoint() -> NSExpression {
+        switch expressionType {
+        case .constantValue:
+            if let value = constantValue as? NSNumber {
+                return NSExpression(forConstantValue: NSNumber(value: value.doubleValue))
+            }
+        case .function:
+            let newArgs = arguments?.map { $0.toFloatingPoint() } ?? []
+            return NSExpression(forFunction: operand, selectorName: function, arguments: newArgs)
+        case .conditional:
+            return NSExpression(forConditional: predicate,
+                                trueExpression: true.toFloatingPoint(),
+                                falseExpression: false.toFloatingPoint())
+        case .unionSet:
+            return NSExpression(forUnionSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .intersectSet:
+            return NSExpression(forIntersectSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .minusSet:
+            return NSExpression(forMinusSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .subquery:
+            if let subQuery = collection as? NSExpression {
+                return NSExpression(forSubquery: subQuery.toFloatingPoint(),
+                                    usingIteratorVariable: variable,
+                                    predicate: predicate)
+            }
+        case .aggregate:
+            if let subExpressions = collection as? [NSExpression] {
+                return NSExpression(forAggregate: subExpressions.map { $0.toFloatingPoint() })
+            }
+        case .anyKey:
+            fatalError("anyKey not yet implemented")
+        case .block:
+            fatalError("block not yet implemented")
+        case .evaluatedObject, .variable, .keyPath:
+            break // Nothing to do here
+        }
+        return self
+    }
+}
+
+
 
 
 
