@@ -143,8 +143,8 @@ class MediaController {
         if isValidFFmpegCandidate(url, checkFileExists: true ) {
             do {
                 let jsonData = try getFFprobeJSON(for: url)
-                let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
-                print("JSONDATA: \(ffprobeOutput)")
+                // let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
+                // print("JSONDATA: \(ffprobeOutput)")
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
                     var format: [String:Any] = [:]
@@ -192,13 +192,19 @@ class MediaController {
         let decoder = JSONDecoder()
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
-            print("ffprobeOutput: \(ffprobeOutput.streams[0].rFrameRate!)")
+            print("ffprobeOutput frame rate: \(ffprobeOutput.streams[0].rFrameRate!)")
             let formula = ffprobeOutput.streams[0].rFrameRate
-            let expression = NSExpression(format: formula!)
-            if let result = expression.toFloatingPoint().expressionValue(with: nil, context: nil) as? Float {
-                print(result) // Output: 5
-                return result
-            }
+            let nums = formula!.split(separator: "/")
+            print("nums: \(nums)")
+            let num1 = Float(nums[0])!
+            let num2 = Float(nums[1])!
+            print("FPS: \(num1 / num2)")
+            return num1 / num2
+//            let expression = NSExpression(format: formula!)
+//            if let result = expression.toFloatingPoint().expressionValue(with: nil, context: nil) as? Float {
+//                print("FPS: \(result)")
+//                return result
+//            }
             
         } catch {
             print("ERROR")
@@ -214,36 +220,36 @@ class MediaController {
         var audioFormatDesc: CMAudioFormatDescription?
         var timeFromatDesc: CMTimeCodeFormatDescription?
         
-        var formats: [String:Any] = [:]
+        var format: [String:Any] = [:]
         for track in asset.tracks {
             switch track.mediaType {
             case .video:
                 videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
-                // print("Video Format Desc: \(videoFormatDesc)")
-                formats["videoDesc"] = videoFormatDesc
-                formats["rate"] = track.nominalFrameRate
-                formats["icon"] = "video"
+                print("Video Format Desc: \(videoFormatDesc, default: "")")
+                format["videoDesc"] = videoFormatDesc
+                format["rate"] = track.nominalFrameRate
+                format["icon"] = "video"
                 break
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
-//                print("Audio Format Desc: \(audioFormatDesc)")
+                print("Audio Format Desc: \(audioFormatDesc, default: "")")
                 
-                formats["audioDesc"] = audioFormatDesc
-                formats["icon"] = "hifispeaker"
+                format["audioDesc"] = audioFormatDesc
+                format["icon"] = "hifispeaker"
                 break
             case .timecode:
                 timeFromatDesc = ((track.formatDescriptions[0]) as! CMTimeCodeFormatDescription)
-                formats["tcDesc"] = timeFromatDesc
+                format["tcDesc"] = timeFromatDesc
             default:
                 break
             }
         }
         // print("TC Frame Rate: \(timeFromatDesc?.frameQuanta ?? 0)")
-        return  formats
+        return  format
     }
     
     
-    
+/*
     func mediaAssetDescription(asset: AVURLAsset, mediaType: CMMediaType) -> [Any] {
         let formatDescriptions = asset.tracks.flatMap { $0.formatDescriptions }
         // let mediaSubtypes = formatDescriptions
@@ -251,7 +257,7 @@ class MediaController {
         //     .map { CMFormatDescriptionGetMediaSubType($0 as! CMFormatDescription).toString() }
         return formatDescriptions.filter { CMFormatDescriptionGetMediaType($0 as! CMFormatDescription) == mediaType }
     }
-    
+*/
     
     
     func checkFFprobe() -> Bool {
@@ -353,6 +359,7 @@ class MediaController {
         
         return Constants.ffmpegSupportedExtensions.contains(fileExtension)
     }
+    
     // MARK: - Conversion Functions
 
     enum FormatDescriptionError: Error {
@@ -473,33 +480,40 @@ class MediaController {
         
         var asbd = AudioStreamBasicDescription()
         asbd.mSampleRate = sampleRate
-        asbd.mFormatID = codecType
         asbd.mChannelsPerFrame = channels
         
         // Set additional properties based on codec
         switch stream.codecName {
         case "pcm_s16le", "pcm_s16be":
+            asbd.mFormatID = "lpcm".toFourCharCode()!
             asbd.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked
             asbd.mBitsPerChannel = 16
             asbd.mBytesPerFrame = 2 * channels
             asbd.mFramesPerPacket = 1
             asbd.mBytesPerPacket = asbd.mBytesPerFrame
+            break
         case "pcm_s24le", "pcm_s24be":
+            asbd.mFormatID = "lpcm".toFourCharCode()!
             asbd.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked
             asbd.mBitsPerChannel = 24
             asbd.mBytesPerFrame = 3 * channels
             asbd.mFramesPerPacket = 1
             asbd.mBytesPerPacket = asbd.mBytesPerFrame
+            break
         case "pcm_f32le", "pcm_f32be":
+            asbd.mFormatID = "lpcm".toFourCharCode()!
             asbd.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked
             asbd.mBitsPerChannel = 32
             asbd.mBytesPerFrame = 4 * channels
             asbd.mFramesPerPacket = 1
             asbd.mBytesPerPacket = asbd.mBytesPerFrame
+            break
         case "aac":
             asbd.mFramesPerPacket = 1024
+            break
         default:
             // Generic compressed format
+            asbd.mFormatID = codecType
             asbd.mFramesPerPacket = 0
         }
         
@@ -522,63 +536,87 @@ class MediaController {
         return formatDesc
     }
 
+    
     // MARK: - Helper Functions
 
     func fourCharCode(from codecName: String) -> CMVideoCodecType {
         // Map common FFmpeg codec names to FourCC codes
         switch codecName.lowercased() {
-        case "h264", "avc1":
-            return kCMVideoCodecType_H264
-        case "hevc", "h265":
-            return kCMVideoCodecType_HEVC
-//        case "vp8":
-//            return kCMVideoCodecType_VP8
-        case "vp9":
-            return kCMVideoCodecType_VP9
-        case "mpeg4":
-            return kCMVideoCodecType_MPEG4Video
-        case "mpeg2video":
-            return kCMVideoCodecType_MPEG2Video
-        case "mpeg1video":
-            return kCMVideoCodecType_MPEG1Video
-        case "mjpeg", "jpeg":
-            return kCMVideoCodecType_JPEG
-        case "prores":
-            return kCMVideoCodecType_AppleProRes422
-//        case "dnxhd":
-//            return CMVideoCodecType(kCMVideoCodecType_DVCPROHD)
-//        case "aac":
-//            return kAudioFormatMPEG4AAC
-//        case "mp3":
-//            return kAudioFormatMPEGLayer3
-//        case "pcm_s16le", "pcm_s16be":
-//            return kAudioFormatLinearPCM
-//        case "pcm_f32le", "pcm_f32be":
-//            return kAudioFormatLinearPCM
-//        case "flac":
-//            return kAudioFormatFLAC
-//        case "alac":
-//            return kAudioFormatAppleLossless
-//        case "opus":
-//            return kAudioFormatOpus
-//        case "vorbis":
-//            return kAudioFormatVorbis
-        default:
-            // Try to convert string to FourCC
-            let chars = Array(codecName.prefix(4).padding(toLength: 4, withPad: " ", startingAt: 0))
-            return FourCharCode(chars[0].asciiValue ?? 0) << 24 |
-                   FourCharCode(chars[1].asciiValue ?? 0) << 16 |
-                   FourCharCode(chars[2].asciiValue ?? 0) << 8 |
-                   FourCharCode(chars[3].asciiValue ?? 0)
+            case "h264", "avc1":
+                return kCMVideoCodecType_H264
+            case "hevc", "h265":
+                return kCMVideoCodecType_HEVC
+            case "vp9":
+                return kCMVideoCodecType_VP9
+            case "mpeg4":
+                return kCMVideoCodecType_MPEG4Video
+            case "mpeg2video":
+                return kCMVideoCodecType_MPEG2Video
+            case "mpeg1video":
+                return kCMVideoCodecType_MPEG1Video
+            case "mjpeg", "jpeg":
+                return kCMVideoCodecType_JPEG
+            case "prores":
+                return kCMVideoCodecType_AppleProRes422
+            default:
+                // Try to convert string to FourCC
+                let chars = Array(codecName.prefix(4).padding(toLength: 4, withPad: " ", startingAt: 0))
+                return FourCharCode(chars[0].asciiValue ?? 0) << 24 |
+                    FourCharCode(chars[1].asciiValue ?? 0) << 16 |
+                    FourCharCode(chars[2].asciiValue ?? 0) << 8 |
+                    FourCharCode(chars[3].asciiValue ?? 0)
         }
     }
-    
-
 }
 
 
 //MARK: - NSExpression extension
+/*
+extension NSExpression {
+    func toFloatingPoint() -> NSExpression {
+        switch expressionType {
+        case .constantValue:
+            if let value = constantValue as? NSNumber {
+                return NSExpression(forConstantValue: NSNumber(value: value.doubleValue))
+            }
+        case .function:
+            let newArgs = arguments?.map { ($0 ).toFloatingPoint() } ?? []
+            return NSExpression(forFunction: operand, selectorName: function, arguments: newArgs)
+        case .conditional:
+            return NSExpression(forConditional: predicate,
+                                trueExpression: self.true.toFloatingPoint(),
+                                falseExpression: self.false.toFloatingPoint())
+        case .unionSet:
+            return NSExpression(forUnionSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .intersectSet:
+            return NSExpression(forIntersectSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .minusSet:
+            return NSExpression(forMinusSet: left.toFloatingPoint(), with: right.toFloatingPoint())
+        case .subquery:
+            if let subQuery = collection as? NSExpression {
+                return NSExpression(forSubquery: subQuery.toFloatingPoint(),
+                                    usingIteratorVariable: variable,
+                                    predicate: predicate)
+            }
+        case .aggregate:
+            if let subExpressions = collection as? [NSExpression] {
+                return NSExpression(forAggregate: subExpressions.map { $0.toFloatingPoint() })
+            }
+        case .anyKey:
+            fatalError("anyKey not yet implemented")
+        case .block:
+            fatalError("block not yet implemented")
+        case .evaluatedObject, .variable, .keyPath:
+            break
+        @unknown default:
+            break
+        }
+        return self
+    }
+}
+*/
 
+/*
 extension NSExpression {
     func toFloatingPoint() -> NSExpression {
         switch expressionType {
@@ -620,7 +658,7 @@ extension NSExpression {
     }
 }
 
-
+*/
 
 
 

@@ -266,11 +266,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-                    print(exitCode)
+//                    print(exitCode)
                     print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-                    print(exitCode)
+//                    print(exitCode)
                     print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
@@ -588,7 +588,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     
-    // MARK: Format Descriptions functions
+    //MARK: Format Descriptions functions
     func getFormatDescription(row: Int) -> String {
         var description: String = ""
         for (key, _) in files[row].formatDescription {
@@ -597,13 +597,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                                                         rate: files[row].formatDescription["rate"] as! Float)
             } else if key == "audioDesc" {
                 description += getAudioTrackDescription(audioFormatDesc: files[row].formatDescription["audioDesc"] as! CMFormatDescription)
-            } else {
-                if let formatDesc = files[row].formatDescription["format"] as? NSDictionary {
-                    if let long_name = formatDesc["format_long_name"] {
-                        description = long_name as! String
-                    }
-                }
-            }
+            } // else {
+//                if let formatDesc = files[row].formatDescription["format"] as? NSDictionary {
+//                    if let long_name = formatDesc["format_long_name"] {
+//                        description = long_name as! String
+//                    }
+//                }
+//            }
         }
         
         return description
@@ -617,7 +617,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         var movieColorPrimaries = ""
         var movieCodec = ""
         let mediaSubType = CMFormatDescriptionGetMediaSubType(videoFormatDesc).toString()
-        print("MEDIA SUB TYPE: \(mediaSubType)")
+        // print("MEDIA SUB TYPE: \(mediaSubType)")
         // print("MEDIA SUB TYPE: \(videoFormatDesc.mediaSubType)")
         //Getting video descriptors
         let movieDimensions =  CMVideoFormatDescriptionGetDimensions(videoFormatDesc)
@@ -719,7 +719,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         var sampleRate: Float64 = 0.0
         let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(audioFormatDesc)
         
-        formatID = asbd?.pointee.mFormatID //.toString() as! String
+        formatID = asbd?.pointee.mFormatID 
         switch formatID {
         case kAudioFormatLinearPCM:
             formatIDDescription = "Linear PCM"
@@ -760,8 +760,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         case "vorb".toFourCharCode():
             formatIDDescription = "Vorbis"
             break
+        case "opus".toFourCharCode():
+            formatIDDescription = "Opus"
+            break
         default:
-            formatIDDescription = "Not available"
+            formatIDDescription = formatID.toString()
             break
         }
         
