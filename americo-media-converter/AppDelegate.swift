@@ -15,8 +15,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
-        window.minSize.width = 1920
-        
+        window.maxSize.width = 1920
+        window.maxSize.height = 1080
     }
     
     @objc func showPreferences() {

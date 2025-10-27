@@ -140,15 +140,15 @@ class MediaController {
             return (isPlayable: true, formats: format)
         }
         
-        if isValidFFmpegCandidate(url, checkFileExists: true ) {
+        if isValidFFmpegCandidate(url) {
             do {
                 let jsonData = try getFFprobeJSON(for: url)
-                // let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
-                // print("JSONDATA: \(ffprobeOutput)")
+                 let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
+                 print("JSONDATA: \(ffprobeOutput)")
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
                     var format: [String:Any] = [:]
-                    print("Format Desc: \(formatDescriptions)")
+//                    print("Format Desc: \(formatDescriptions)")
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
                             case kCMMediaType_Video:
@@ -192,19 +192,14 @@ class MediaController {
         let decoder = JSONDecoder()
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
-            print("ffprobeOutput frame rate: \(ffprobeOutput.streams[0].rFrameRate!)")
+//            print("ffprobeOutput frame rate: \(ffprobeOutput.streams[0].rFrameRate!)")
             let formula = ffprobeOutput.streams[0].rFrameRate
             let nums = formula!.split(separator: "/")
-            print("nums: \(nums)")
+//            print("nums: \(nums)")
             let num1 = Float(nums[0])!
             let num2 = Float(nums[1])!
-            print("FPS: \(num1 / num2)")
+//            print("FPS: \(num1 / num2)")
             return num1 / num2
-//            let expression = NSExpression(format: formula!)
-//            if let result = expression.toFloatingPoint().expressionValue(with: nil, context: nil) as? Float {
-//                print("FPS: \(result)")
-//                return result
-//            }
             
         } catch {
             print("ERROR")
@@ -225,14 +220,14 @@ class MediaController {
             switch track.mediaType {
             case .video:
                 videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
-                print("Video Format Desc: \(videoFormatDesc, default: "")")
+                print("Video Format Desc: \(String(describing: videoFormatDesc))")
                 format["videoDesc"] = videoFormatDesc
                 format["rate"] = track.nominalFrameRate
                 format["icon"] = "video"
                 break
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
-                print("Audio Format Desc: \(audioFormatDesc, default: "")")
+                print("Audio Format Desc: \(String(describing: audioFormatDesc))")
                 
                 format["audioDesc"] = audioFormatDesc
                 format["icon"] = "hifispeaker"
@@ -248,16 +243,6 @@ class MediaController {
         return  format
     }
     
-    
-/*
-    func mediaAssetDescription(asset: AVURLAsset, mediaType: CMMediaType) -> [Any] {
-        let formatDescriptions = asset.tracks.flatMap { $0.formatDescriptions }
-        // let mediaSubtypes = formatDescriptions
-        //     .filter { CMFormatDescriptionGetMediaType($0 as! CMFormatDescription) == mediaType }
-        //     .map { CMFormatDescriptionGetMediaSubType($0 as! CMFormatDescription).toString() }
-        return formatDescriptions.filter { CMFormatDescriptionGetMediaType($0 as! CMFormatDescription) == mediaType }
-    }
-*/
     
     
     func checkFFprobe() -> Bool {
@@ -357,7 +342,8 @@ class MediaController {
             return false
         }
         
-        return Constants.ffmpegSupportedExtensions.contains(fileExtension)
+        return Constants.playableFileExt.contains(fileExtension)
+//        return Constants.ffmpegSupportedExtensions.contains(fileExtension)
     }
     
     // MARK: - Conversion Functions
@@ -412,9 +398,20 @@ class MediaController {
         }
         
         let codecType = fourCharCode(from: stream.codecName)
+        
         var formatDescription: CMFormatDescription?
         
         var extensions: [String: Any] = [:]
+        
+        if let fieldOrder = stream.fieldOrder {
+            extensions["FieldOrder"] = fieldOrder
+        }
+        
+        if stream.fieldOrder == "progressive" {
+            extensions["CVFieldCount"] = 1
+        } else {
+            extensions["CVFieldCount"] = 2
+        }
         
         if let avg_frame_rate = stream.avgFrameRate {
             extensions["AvgFrameRate"] = avg_frame_rate
@@ -569,157 +566,3 @@ class MediaController {
     }
 }
 
-
-//MARK: - NSExpression extension
-/*
-extension NSExpression {
-    func toFloatingPoint() -> NSExpression {
-        switch expressionType {
-        case .constantValue:
-            if let value = constantValue as? NSNumber {
-                return NSExpression(forConstantValue: NSNumber(value: value.doubleValue))
-            }
-        case .function:
-            let newArgs = arguments?.map { ($0 ).toFloatingPoint() } ?? []
-            return NSExpression(forFunction: operand, selectorName: function, arguments: newArgs)
-        case .conditional:
-            return NSExpression(forConditional: predicate,
-                                trueExpression: self.true.toFloatingPoint(),
-                                falseExpression: self.false.toFloatingPoint())
-        case .unionSet:
-            return NSExpression(forUnionSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .intersectSet:
-            return NSExpression(forIntersectSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .minusSet:
-            return NSExpression(forMinusSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .subquery:
-            if let subQuery = collection as? NSExpression {
-                return NSExpression(forSubquery: subQuery.toFloatingPoint(),
-                                    usingIteratorVariable: variable,
-                                    predicate: predicate)
-            }
-        case .aggregate:
-            if let subExpressions = collection as? [NSExpression] {
-                return NSExpression(forAggregate: subExpressions.map { $0.toFloatingPoint() })
-            }
-        case .anyKey:
-            fatalError("anyKey not yet implemented")
-        case .block:
-            fatalError("block not yet implemented")
-        case .evaluatedObject, .variable, .keyPath:
-            break
-        @unknown default:
-            break
-        }
-        return self
-    }
-}
-*/
-
-/*
-extension NSExpression {
-    func toFloatingPoint() -> NSExpression {
-        switch expressionType {
-        case .constantValue:
-            if let value = constantValue as? NSNumber {
-                return NSExpression(forConstantValue: NSNumber(value: value.doubleValue))
-            }
-        case .function:
-            let newArgs = arguments?.map { $0.toFloatingPoint() } ?? []
-            return NSExpression(forFunction: operand, selectorName: function, arguments: newArgs)
-        case .conditional:
-            return NSExpression(forConditional: predicate,
-                                trueExpression: true.toFloatingPoint(),
-                                falseExpression: false.toFloatingPoint())
-        case .unionSet:
-            return NSExpression(forUnionSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .intersectSet:
-            return NSExpression(forIntersectSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .minusSet:
-            return NSExpression(forMinusSet: left.toFloatingPoint(), with: right.toFloatingPoint())
-        case .subquery:
-            if let subQuery = collection as? NSExpression {
-                return NSExpression(forSubquery: subQuery.toFloatingPoint(),
-                                    usingIteratorVariable: variable,
-                                    predicate: predicate)
-            }
-        case .aggregate:
-            if let subExpressions = collection as? [NSExpression] {
-                return NSExpression(forAggregate: subExpressions.map { $0.toFloatingPoint() })
-            }
-        case .anyKey:
-            fatalError("anyKey not yet implemented")
-        case .block:
-            fatalError("block not yet implemented")
-        case .evaluatedObject, .variable, .keyPath:
-            break // Nothing to do here
-        }
-        return self
-    }
-}
-
-*/
-
-
-
-// MARK: - Usage Example
-/*
-func processFFprobeOutput(jsonData: Data) {
-    do {
-        let formatDescriptions = try createFormatDescriptions(from: jsonData)
-        
-        for (index, formatDesc) in formatDescriptions.enumerated() {
-            print("Stream \(index):")
-            
-            if CMFormatDescriptionGetMediaType(formatDesc) == kCMMediaType_Video {
-                let dimensions = CMVideoFormatDescriptionGetDimensions(formatDesc)
-                print("  Type: Video")
-                print("  Dimensions: \(dimensions.width)x\(dimensions.height)")
-                print("  Codec: \(CMFormatDescriptionGetMediaSubType(formatDesc).toString())")
-            } else if CMFormatDescriptionGetMediaType(formatDesc) == kCMMediaType_Audio {
-                if let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc) {
-                    print("  Type: Audio")
-                    print("  Sample Rate: \(asbd.pointee.mSampleRate) Hz")
-                    print("  Channels: \(asbd.pointee.mChannelsPerFrame)")
-                    print("  Codec: \(asbd.pointee.mFormatID.toString())")
-                }
-            }
-        }
-    } catch {
-        print("Error processing FFprobe output: \(error)")
-    }
-}
-
-*/
-
-
-/*
-            let process = Process()
-            process.executableURL = ffprobeURL
-            let arguments = "-v quiet -show_format -show_streams -print_format json \(url.path)"  // ffprobe -v quiet -show_format -show_streams -print_format json input.mp4
-            process.arguments = arguments.components(separatedBy: .whitespaces)
-            
-            let outputPipe = Pipe()
-            process.standardOutput = outputPipe
-            process.standardError = outputPipe
-            
-            do {
-                try process.run()
-                process.waitUntilExit()
-                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                do {
-                    if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                        print("CMFD: \(dictionary)")
-                        return (isPlayable: true, formats: dictionary)
-                    } catch {
-                        print("Failed to parse JSON: $$error.localizedDescription)")
-                    } catch {
-                        print("Failed to run process: $$error)")
-                    }
-                } catch {
-                    print("Failed to run process: $$error)")
-                }
-            }
-        }
-*/
-        
