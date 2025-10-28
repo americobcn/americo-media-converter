@@ -63,7 +63,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     let h264Containers = ["MP4", "MOV"]
     let proresContainers = ["MOV", "MXF", "MKV"]
             
-    let prefs = PreferencesManager.shared
+    let prefs = PreferencesManager.shared    
+    
     
     // MARK: Initializers
     required init?(coder: NSCoder) {
@@ -139,7 +140,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         if prefs.defaultAudioDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
         } else {
-            //Check if the preferences destination folder exists and is writable
             if checkDestinationPath(destPath: prefs.defaultAudioDestination) {
                 destinationFolder = prefs.defaultAudioDestination
             } else {
@@ -147,7 +147,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
         }
         
-        if destinationFolder == nil {
+        if (destinationFolder == nil) {
             return
         }
         
@@ -222,7 +222,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         if prefs.defaultVideoDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
         } else {
-            //Check if the preferences destination folder exists and is writable
             if checkDestinationPath(destPath: prefs.defaultVideoDestination) {
                 destinationFolder = prefs.defaultVideoDestination
             } else {
@@ -367,12 +366,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 return true
             }
         } catch {
-            let alert = NSAlert()
-            alert.messageText = "Destination path in preferences is not available or writable."
-            alert.informativeText = "Choose a valid folder."
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+            _ = Constants.dropAlert(message: "Destination path in preferences is not available or writable.",
+                                informative: "Choose a valid folder.")
             print("An error occurred, choosing destination folder.")
         }
         return false

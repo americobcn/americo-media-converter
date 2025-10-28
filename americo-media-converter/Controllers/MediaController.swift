@@ -215,7 +215,7 @@ class MediaController {
         var audioFormatDesc: CMAudioFormatDescription?
         var timeFromatDesc: CMTimeCodeFormatDescription?
         
-        var format: [String:Any] = [:]
+        var format: [String:Any] = [:]        
         for track in asset.tracks {
             switch track.mediaType {
             case .video:
