@@ -1,10 +1,3 @@
-//
-//  MediaController.swift
-//  MyApp
-//
-//  Created by Américo Cot on 23/3/25.
-//
-
 import Foundation
 import CoreMedia
 import AVFoundation
@@ -16,11 +9,11 @@ class MediaController {
     var videoFormatDesc: CMFormatDescription!
     var audioFormatDesc: CMFormatDescription!
     var ffprobeURL: URL!
-    var ffmpegURL: URL!
     var format: [String:Any] = [:]
     
-    // MARK: - FFprobe JSON Models
-
+    
+// MARK: - FFprobe JSON Models
+    
     struct FFprobeOutput: Codable {
         let streams: [FFprobeStream]
         let format: FFprobeFormat
@@ -119,20 +112,25 @@ class MediaController {
         }
     }
 
-    
+    enum FormatDescriptionError: Error {
+        case unsupportedCodec(String)
+        case missingRequiredField(String)
+        case invalidData
+        case creationFailed
+    }
+
     
     init() {
         self.ffprobeURL = nil
-        if !checkFFprobe() {
-            _ = Constants.dropAlert(message: "ffprobe is missing", informative: "Some info will not be available until you install ffprobe binary in Resources folder of the app.\nIf ffprobe is located in /usr/local/bin/ffprobe, copy the binary in the Resources folder of the app.")
+        self.ffprobeURL = Constants.checkBinary(binary: "ffprobe")
+        if self.ffprobeURL == nil {
+            Constants.dropAlert(message: "ffprobe is missing", informative: "Some info will not be available until you install ffprobe binary in Resources folder of the app.\nIf ffprobe is located in /usr/local/bin/ffprobe, copy the binary in the Resources folder of the app.")
         }
-        
-        self.ffmpegURL = Bundle.main.url(forResource: "ffmpeg", withExtension: nil)
     }
     
     
     
-    //MARK: Check if file is a valid media file and return file metadata
+//MARK: Check if file is a valid media file and return file metadata
     func isAVMediaType(url: URL) -> (isPlayable: Bool, formats: [String: Any]) {
         let urlAsset = AVURLAsset(url: url)
         if urlAsset.isPlayable {
@@ -204,12 +202,11 @@ class MediaController {
         } catch {
             print("ERROR")
         }
-        
         return 0.0
     }
     
     
-    
+
     func getMetadata(asset: AVURLAsset ) -> [String: Any] {
         var videoFormatDesc: CMVideoFormatDescription?
         var audioFormatDesc: CMAudioFormatDescription?
@@ -244,35 +241,38 @@ class MediaController {
     }
     
     
-    
+    /*
     func checkFFprobe() -> Bool {
+        // First, try to find ffprobe in the app bundle
         self.ffprobeURL = Bundle.main.url(forResource: "ffprobe", withExtension: nil)
         if  self.ffprobeURL != nil {
             return true
-        } else {
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-            task.arguments = ["ffprobe"]
-            
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            try? task.run()
+        }
+        
+        // If not found in bundle, search system paths
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+        task.arguments = ["ffprobe"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        
+        do {
+            try task.run()
             task.waitUntilExit()
-            
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if data.isEmpty {
-                return false
-            }
-            
             if let path = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines) {
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+               !path.isEmpty {
                 self.ffprobeURL = URL(fileURLWithPath: path)
                 return true
-            } else {
-                return false
             }
+        } catch {
+            Constants.dropAlert(message: "Can't find ffprobe binary.", informative: "Check if ffprobe is correctly installed.")
         }
+        return false
     }
+    */
     
     
     func getFFprobeJSON(for url: URL) throws -> Data {
@@ -295,6 +295,7 @@ class MediaController {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return data
     }
+    
     
     
     func checkFFprobeFile(for url: URL) throws -> Int32 {
@@ -346,18 +347,12 @@ class MediaController {
 //        return Constants.ffmpegSupportedExtensions.contains(fileExtension)
     }
     
-    // MARK: - Conversion Functions
 
-    enum FormatDescriptionError: Error {
-        case unsupportedCodec(String)
-        case missingRequiredField(String)
-        case invalidData
-        case creationFailed
-    }
 
     
     
-    // MARK: - Format Descriptions
+    
+// MARK: - Format Descriptions
     
     func createFormatDescriptions(from jsonData: Data) throws -> [CMFormatDescription] {
         let decoder = JSONDecoder()
@@ -390,7 +385,7 @@ class MediaController {
     
     
     
-    // MARK: - Video Format Description
+// MARK: - Video Format Description
 
     func createVideoFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         guard let width = stream.width, let height = stream.height else {
@@ -447,17 +442,6 @@ class MediaController {
              ]
         }
         
-//        if let sarString = stream.sampleAspectRatio, sarString != "0:1" {
-//            let components = sarString.split(separator: ":")
-//            if components.count == 2,
-//               let hSpacing = Int(components[0]),
-//               let vSpacing = Int(components[1]) {
-//                extensions[kCVImageBufferPixelAspectRatioKey as String] = [
-//                    kCVImageBufferPixelAspectRatioHorizontalSpacingKey as String: hSpacing,
-//                    kCVImageBufferPixelAspectRatioVerticalSpacingKey as String: vSpacing
-//                ]
-//            }
-//        }
         
         let extensionDict = extensions.isEmpty ? nil : extensions as CFDictionary
         
@@ -479,7 +463,7 @@ class MediaController {
 
     
     
-    // MARK: - Audio Format Description
+// MARK: - Audio Format Description
 
     func createAudioFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         guard let sampleRateString = stream.sampleRate,
@@ -553,7 +537,7 @@ class MediaController {
     }
 
     
-    // MARK: - Helper Functions
+// MARK: - Helper Functions
 
     func fourCharCode(from codecName: String) -> CMVideoCodecType? {
         // Map common FFmpeg codec names to FourCC codes
@@ -583,7 +567,6 @@ class MediaController {
                 FourCharCode(chars[3].asciiValue ?? 0)
         }
     }
-    
     
     
     private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {        

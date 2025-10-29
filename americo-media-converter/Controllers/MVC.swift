@@ -1,10 +1,3 @@
-//
-//  MVC.swift
-//  MyApp
-//
-//  Created by Américo Cot on 21/3/25.
-//
-
 import Cocoa
 import AVFoundation
 import AVKit
@@ -13,7 +6,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
-
     @IBOutlet weak var playerView: AVPlayerView!
     
     // MARK: Audio Outlets
@@ -36,9 +28,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
     @IBOutlet weak var videoPadButton: NSButton!
     
-    private var contentView: NSView!
-    
-    
+//    private var contentView: NSView!
+        
     // MARK: Media related variables
     struct mediaFile {
         var mfURL: URL
@@ -366,7 +357,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 return true
             }
         } catch {
-            _ = Constants.dropAlert(message: "Destination path in preferences is not available or writable.",
+            Constants.dropAlert(message: "Destination path in preferences is not available or writable.",
                                 informative: "Choose a valid folder.")
             print("An error occurred, choosing destination folder.")
         }

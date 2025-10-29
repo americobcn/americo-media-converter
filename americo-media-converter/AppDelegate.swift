@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  MyApp
-//
-//  Created by Américo Cot Toloza on 21/3/25.
-//
-
 import Cocoa
 
 @main

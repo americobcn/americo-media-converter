@@ -1,11 +1,5 @@
-//
-//  PreferenceManager.swift
-//  americo-media-converter
-//
-//  Created by Américo Cot on 10/10/25.
-//
-
 import Cocoa
+
 
 // MARK: - Preferences Manager
 class PreferencesManager {
@@ -20,8 +14,9 @@ class PreferencesManager {
     }
     
     private init() {}
-    
-    // MARK: - Getters and Setters
+
+
+// MARK: - Getters and Setters
     var defaultVideoDestination: String {
         get { defaults.string(forKey: Keys.defaultVideoDestination) ?? "" }
         set { defaults.set(newValue, forKey: Keys.defaultVideoDestination) }
@@ -43,6 +38,7 @@ class PreferencesManager {
         defaults.removeObject(forKey: Keys.defaultAudioDestination)
     }
 }
+
 
 // MARK: - Preferences Window Controller
 class PreferencesWindowController: NSWindowController {
@@ -67,6 +63,7 @@ class PreferencesWindowController: NSWindowController {
         super.windowDidLoad()
     }
 }
+
 
 // MARK: - Preferences View Controller with Tab View
 class PreferencesViewController: NSViewController  {
@@ -101,6 +98,7 @@ class PreferencesViewController: NSViewController  {
         view.addSubview(tabView)
     }
 }
+
 
 // MARK: - General Preferences View Controller
 class GeneralPreferencesViewController: NSViewController, NSTextFieldDelegate {

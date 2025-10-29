@@ -1,16 +1,9 @@
-//
-//  Converter.swift
-//  americo-media-converter
-//
-//  Created by Americo Cot on 5/10/25.
-//
-
-
 import Cocoa
 
 protocol ConverterDelegate: AnyObject {
     func shouldUpdateOutView(_ text: String, _ attributes: [NSAttributedString.Key: Any])
 }
+
 
 class Converter {
     weak var delegate: ConverterDelegate?
@@ -23,8 +16,10 @@ class Converter {
     }
     
     private func setup() {
-        if !checkFFmpeg() {
-            _ = Constants.dropAlert(message: "ffmpeg is missing",
+        self.ffmpegURL = nil
+        self.ffmpegURL = Constants.checkBinary(binary: "ffmpeg")
+        if self.ffmpegURL == nil {
+            Constants.dropAlert(message: "ffmpeg is missing",
                                   informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
             NSApplication.shared.terminate(nil)
         }
@@ -68,14 +63,12 @@ class Converter {
         // Setup readability handler
         let fileHandle = outputPipe.fileHandleForReading
         fileHandle.readabilityHandler = { [weak self] handle in
-//            guard let data = handle.availableData, !data.isEmpty else { return }
             let data = handle.availableData
             if data.isEmpty { return }
-            
             if let output = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     self?.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
-                    print(output)
+//                    print(output)
                 }
             }
         }
@@ -115,7 +108,8 @@ class Converter {
             }
         }
     }
-    
+
+    /*
     func checkFFmpeg() -> Bool {
         // First, try to find ffmpeg in the app bundle
         if let url = Bundle.main.url(forResource: "ffmpeg", withExtension: nil) {
@@ -148,8 +142,8 @@ class Converter {
         
         return false
     }
-    
-    /// Cancel all running processes
+    */
+    // Cancel all running processes
     func cancelAllProcesses() {
         for process in runningProcesses {
             if process.isRunning {
