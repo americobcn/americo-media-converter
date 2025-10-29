@@ -397,7 +397,11 @@ class MediaController {
             throw FormatDescriptionError.missingRequiredField("width or height")
         }
         
-        let codecType = fourCharCode(from: stream.codecName)
+//        let codecType = fourCharCode(from: stream.codecName)
+        guard let codecType = fourCharCode(from: stream.codecName) else {
+            throw FormatDescriptionError.creationFailed
+        }
+
         
         var formatDescription: CMFormatDescription?
         
@@ -432,17 +436,28 @@ class MediaController {
         }
         
         // Parse pixel aspect ratio
-        if let sarString = stream.sampleAspectRatio, sarString != "0:1" {
-            let components = sarString.split(separator: ":")
-            if components.count == 2,
-               let hSpacing = Int(components[0]),
-               let vSpacing = Int(components[1]) {
-                extensions[kCVImageBufferPixelAspectRatioKey as String] = [
-                    kCVImageBufferPixelAspectRatioHorizontalSpacingKey as String: hSpacing,
-                    kCVImageBufferPixelAspectRatioVerticalSpacingKey as String: vSpacing
-                ]
-            }
+        if let sar = parseSampleAspectRatio(stream.sampleAspectRatio) {
+            // Use sar.numerator and sar.denominator safely
+            print("SAR: \(sar.numerator):\(sar.denominator)")
+            let hSpacing = Int(sar.numerator)
+            let vSpacing = Int(sar.denominator)
+            extensions[kCVImageBufferPixelAspectRatioKey as String] = [
+                 kCVImageBufferPixelAspectRatioHorizontalSpacingKey as String: hSpacing,
+                 kCVImageBufferPixelAspectRatioVerticalSpacingKey as String: vSpacing
+             ]
         }
+        
+//        if let sarString = stream.sampleAspectRatio, sarString != "0:1" {
+//            let components = sarString.split(separator: ":")
+//            if components.count == 2,
+//               let hSpacing = Int(components[0]),
+//               let vSpacing = Int(components[1]) {
+//                extensions[kCVImageBufferPixelAspectRatioKey as String] = [
+//                    kCVImageBufferPixelAspectRatioHorizontalSpacingKey as String: hSpacing,
+//                    kCVImageBufferPixelAspectRatioVerticalSpacingKey as String: vSpacing
+//                ]
+//            }
+//        }
         
         let extensionDict = extensions.isEmpty ? nil : extensions as CFDictionary
         
@@ -473,7 +488,11 @@ class MediaController {
         }
         
         let channels = UInt32(stream.channels ?? 2)
-        let codecType = fourCharCode(from: stream.codecName)
+//        let codecType = fourCharCode(from: stream.codecName)
+        guard let codecType = fourCharCode(from: stream.codecName) else {
+            throw FormatDescriptionError.creationFailed
+        }
+
         
         var asbd = AudioStreamBasicDescription()
         asbd.mSampleRate = sampleRate
@@ -536,16 +555,16 @@ class MediaController {
     
     // MARK: - Helper Functions
 
-    func fourCharCode(from codecName: String) -> CMVideoCodecType {
+    func fourCharCode(from codecName: String) -> CMVideoCodecType? {
         // Map common FFmpeg codec names to FourCC codes
         switch codecName.lowercased() {
-            case "h264", "avc1":
+            case "h264", "avc1", "h264_mp4", "h264_nal":
                 return kCMVideoCodecType_H264
             case "hevc", "h265":
                 return kCMVideoCodecType_HEVC
             case "vp9":
                 return kCMVideoCodecType_VP9
-            case "mpeg4":
+            case "mpeg4", "mpeg4_part2":
                 return kCMVideoCodecType_MPEG4Video
             case "mpeg2video":
                 return kCMVideoCodecType_MPEG2Video
@@ -557,12 +576,32 @@ class MediaController {
                 return kCMVideoCodecType_AppleProRes422
             default:
                 // Try to convert string to FourCC
-                let chars = Array(codecName.prefix(4).padding(toLength: 4, withPad: " ", startingAt: 0))
-                return FourCharCode(chars[0].asciiValue ?? 0) << 24 |
-                    FourCharCode(chars[1].asciiValue ?? 0) << 16 |
-                    FourCharCode(chars[2].asciiValue ?? 0) << 8 |
-                    FourCharCode(chars[3].asciiValue ?? 0)
+            let chars = Array(codecName.prefix(4).padding(toLength: 4, withPad: " ", startingAt: 0))
+            return FourCharCode(chars[0].asciiValue ?? 0) << 24 |
+                FourCharCode(chars[1].asciiValue ?? 0) << 16 |
+                FourCharCode(chars[2].asciiValue ?? 0) << 8 |
+                FourCharCode(chars[3].asciiValue ?? 0)
         }
+    }
+    
+    
+    
+    private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {
+        print("******************   parseSampleAspectRatio CALLED ***************************")
+        guard let sarString = aspectRatioString,
+              !sarString.isEmpty,
+              sarString != "0:1" else {
+            return nil
+        }
+        
+        let components = sarString.split(separator: ":").compactMap { Int($0) }
+        
+        guard components.count == 2,
+              components[1] > 0 else {
+            return nil
+        }
+        
+        return (numerator: components[0], denominator: components[1])
     }
 }
 

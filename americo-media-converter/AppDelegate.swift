@@ -14,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindowController: PreferencesWindowController?
         
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        self.window.title = "Américo's Media Converter"
         window.maxSize.width = 1920
         window.maxSize.height = 1080
     }

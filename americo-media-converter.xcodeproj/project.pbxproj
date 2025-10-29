@@ -24,6 +24,7 @@
 		1E3B81082D9010CC003FABF5 /* MediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaController.swift; sourceTree = "<group>"; };
 		1E4A29B42D8F18C000253887 /* NavigationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarView.swift; sourceTree = "<group>"; };
 		1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
+		1ED37F1C2EB18DA8003673C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1EEA4B662D8DC21E005152DF /* americo-media-converter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "americo-media-converter.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1EEA4B692D8DC21E005152DF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1EEA4B6B2D8DC220005152DF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -107,6 +108,7 @@
 		1EEA4B682D8DC21E005152DF /* americo-media-converter */ = {
 			isa = PBXGroup;
 			children = (
+				1ED37F1C2EB18DA8003673C4 /* Info.plist */,
 				1E6D64E02E92E3F10051812E /* Resources */,
 				DA0CC0032D91CAD9002E5BB5 /* Converters */,
 				1E1E25FE2D9096AA005B5554 /* Controllers */,
@@ -385,7 +387,8 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Americo's Media Converter";
+				INFOPLIST_FILE = "americo-media-converter/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
@@ -431,7 +434,8 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Americo's Media Converter";
+				INFOPLIST_FILE = "americo-media-converter/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
