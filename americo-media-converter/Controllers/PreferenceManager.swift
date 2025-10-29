@@ -69,7 +69,7 @@ class PreferencesWindowController: NSWindowController {
 }
 
 // MARK: - Preferences View Controller with Tab View
-class PreferencesViewController: NSViewController {
+class PreferencesViewController: NSViewController  {
     private var tabView: NSTabView!
     
     override func loadView() {
@@ -103,8 +103,13 @@ class PreferencesViewController: NSViewController {
 }
 
 // MARK: - General Preferences View Controller
-class GeneralPreferencesViewController: NSViewController {
+class GeneralPreferencesViewController: NSViewController, NSTextFieldDelegate {
     private let prefs = PreferencesManager.shared
+    
+    private enum PreferencesTextFieldTag: Int {
+        case defaultVideoTextField = 1001
+        case defaultAudioTextField = 1002
+    }
     
     // UI Elements
     private var defaultAudioDestinationField: NSTextField!
@@ -141,6 +146,7 @@ class GeneralPreferencesViewController: NSViewController {
         
         // Video Destination Text Field
         defaultVideoDestinationField = NSTextField(frame: NSRect(x: 140, y: 248, width: 250, height: 24))
+        defaultVideoDestinationField.tag = PreferencesTextFieldTag.defaultVideoTextField.rawValue
         defaultVideoDestinationField.placeholderString = "Path to folder"
         defaultVideoDestinationField.target = self
         defaultVideoDestinationField.action = #selector(videoDestinationChanged)
@@ -153,6 +159,7 @@ class GeneralPreferencesViewController: NSViewController {
         
         // Audio Destination Text Field
         defaultAudioDestinationField = NSTextField(frame: NSRect(x: 140, y: 198, width: 250, height: 24))
+        defaultAudioDestinationField.tag = PreferencesTextFieldTag.defaultAudioTextField.rawValue
         defaultAudioDestinationField.placeholderString = "Path to folder"
         defaultAudioDestinationField.target = self
         defaultAudioDestinationField.action = #selector(audioDestinationChanged)
@@ -165,6 +172,10 @@ class GeneralPreferencesViewController: NSViewController {
         resetButton.target = self
         resetButton.action = #selector(resetToDefaults)
         containerView.addSubview(resetButton)
+        
+        // Set Delegates
+        defaultAudioDestinationField.delegate = self
+        defaultVideoDestinationField.delegate = self
     }
     
     private func loadPreferences() {
@@ -195,7 +206,33 @@ class GeneralPreferencesViewController: NSViewController {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
+    
+    
+    // MARK: NSTextField Delegate methods
+    func controlTextDidChange(_ obj: Notification) {
+        let textField = obj.object as! NSTextField
+        let currentValue = textField.stringValue
+        
+        // Convert tag to enum value for safer comparison
+        guard let textFieldType = PreferencesTextFieldTag(rawValue: textField.tag) else {
+            print("Unknown text field tag: \(textField.tag)")
+            return
+        }
+        
+        switch textFieldType {
+            case .defaultVideoTextField:
+                prefs.defaultVideoDestination = currentValue
+                print("defaultVideoDestination changed to: \(currentValue)")
+                break
+            case .defaultAudioTextField:
+                prefs.defaultAudioDestination = currentValue
+                print("defaultAudioDestination changed to: \(currentValue)")
+                break
+        }
+    }
 }
+
+
 
 // MARK: - Notifications Preferences View Controller
 class NotificationsPreferencesViewController: NSViewController {

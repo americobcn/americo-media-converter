@@ -73,6 +73,7 @@
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"
+      customArchiveName = "Americo&apos;s Media Converter"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>
