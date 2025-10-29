@@ -586,8 +586,7 @@ class MediaController {
     
     
     
-    private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {
-        print("******************   parseSampleAspectRatio CALLED ***************************")
+    private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {        
         guard let sarString = aspectRatioString,
               !sarString.isEmpty,
               sarString != "0:1" else {

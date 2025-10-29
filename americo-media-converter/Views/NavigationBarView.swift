@@ -68,38 +68,3 @@ class NavigationBarView: NSView {
         }
     }
 }
-
-
-/*
- // Usage Example in a ViewController
- class MainViewController: NSViewController, NavigationBarDelegate {
- private var contentView: NSView!
- 
- override func loadView() {
- view = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
- contentView = NSView(frame: NSRect(x: 0, y: 50, width: 800, height: 550))
- view.addSubview(contentView)
- 
- let homeView = NSView(frame: contentView.bounds)
- homeView.wantsLayer = true
- homeView.layer?.backgroundColor = NSColor.systemBlue.cgColor
- 
- let settingsView = NSView(frame: contentView.bounds)
- settingsView.wantsLayer = true
- settingsView.layer?.backgroundColor = NSColor.systemGreen.cgColor
- 
- let profileView = NSView(frame: contentView.bounds)
- profileView.wantsLayer = true
- profileView.layer?.backgroundColor = NSColor.systemRed.cgColor
- 
- let navBar = NavigationBar(frame: NSRect(x: 0, y: 550, width: 800, height: 50), views: [homeView, settingsView, profileView])
- navBar.delegate = self
- view.addSubview(navBar)
- }
- 
- func didSelectView(_ view: NSView) {
- contentView.subviews.forEach { $0.removeFromSuperview() }
- contentView.addSubview(view)
- }
- }
- */
