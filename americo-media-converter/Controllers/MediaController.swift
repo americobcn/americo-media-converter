@@ -146,7 +146,6 @@ class MediaController {
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
                     var format: [String:Any] = [:]
-//                    print("Format Desc: \(formatDescriptions)")
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
                             case kCMMediaType_Video:
@@ -236,14 +235,13 @@ class MediaController {
                 break
             }
         }
-        // print("TC Frame Rate: \(timeFromatDesc?.frameQuanta ?? 0)")
         return  format
     }
     
     
     func getFFprobeJSON(for url: URL) throws -> Data {
         let process = Process()
-        process.executableURL = ffprobeURL // URL(fileURLWithPath: "/usr/local/bin/ffprobe")
+        process.executableURL = ffprobeURL
         process.arguments = [
             "-v", "quiet",
             "-show_format",
@@ -310,7 +308,6 @@ class MediaController {
         }
         
         return Constants.playableFileExt.contains(fileExtension)
-//        return Constants.ffmpegSupportedExtensions.contains(fileExtension)
     }
     
 
@@ -553,35 +550,3 @@ class MediaController {
     }
 }
 
-/*
-func checkFFprobe() -> Bool {
-    // First, try to find ffprobe in the app bundle
-    self.ffprobeURL = Bundle.main.url(forResource: "ffprobe", withExtension: nil)
-    if  self.ffprobeURL != nil {
-        return true
-    }
-    
-    // If not found in bundle, search system paths
-    let task = Process()
-    task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-    task.arguments = ["ffprobe"]
-    
-    let pipe = Pipe()
-    task.standardOutput = pipe
-    
-    do {
-        try task.run()
-        task.waitUntilExit()
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        if let path = String(data: data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-           !path.isEmpty {
-            self.ffprobeURL = URL(fileURLWithPath: path)
-            return true
-        }
-    } catch {
-        Constants.dropAlert(message: "Can't find ffprobe binary.", informative: "Check if ffprobe is correctly installed.")
-    }
-    return false
-}
-*/

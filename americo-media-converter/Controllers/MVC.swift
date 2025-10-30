@@ -90,7 +90,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     enum VideoCodecs: String, CaseIterable {
-        case ProRes, DNxHD, H264
+        case ProRes = "ProRes"
+        case DNxHD = "DNxHD"
+        case H264 = "H264"
         
         var codec: String {
             switch self {
@@ -300,32 +302,58 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
             
         var arguments: String = ""
+        var resolution: String = ""
+        var videoProfile: VideoProfiles?
+        var profile: String = ""
+        if let vp = VideoProfiles.allCases.first(where: { $0.rawValue == videoCodecButton.title }) {
+            videoProfile = vp
+            print("VIDEOPROFILE: \(videoProfile!)")
+        }
+        
+        if let prof = videoProfile?.profiles.first(where: { $0.title == videoProfileButton.title })?.profile {
+            profile = prof
+            print("PROFILE: \(profile)")
+        }
+                
+        if let res = VideoResolution.allCases.first(where: { $0.resolutionString == videoResolutionButton.title })?.ffmpegString {
+            resolution = res
+            print("RESOLUTION: \(resolution)")
+        }
+        
         switch videoCodecButton.title {
         case "ProRes":
-            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
             if videoPadButton.state == .on {
-                arguments = String(format: "-y -c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2",
-                                   videoProfileButton.title.lowercased(), resolution[0], resolution[1], resolution[0], resolution[1])
+                arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2"
             } else {
-                arguments = String(format: "-y -c:v prores_ks -profile:v %@ -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=%@:%@:force_original_aspect_ratio=decrease", videoProfileButton.title.lowercased(), resolution[0], resolution[1])
+                arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=\(resolution):force_original_aspect_ratio=decrease"
             }
             break
             
         case "H264":
-            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
             if videoPadButton.state == .on {
-                arguments = String(format: "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a copy", resolution[0], resolution[1], resolution[0], resolution[1])
+                arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2 -c:a copy"
             } else {
-                arguments = String(format: "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=%@ -c:a copy",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
+                arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease -c:a copy"
             }
             break
             
         case "DNxHD":
-            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
+            var pix_fmt: String
+            switch profile {
+            case "dnxhr_hqx":
+                pix_fmt = "yuv422p10le"
+                break
+            case "dnxhr_444":
+                pix_fmt = "yuv444p10le"
+                break
+            default:
+                pix_fmt = "yuv422p"
+            }
+                                
             if videoPadButton.state == .on {
-                arguments = String(format: "-y -c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a pcm_s24le", resolution[0], resolution[1], resolution[0], resolution[1])
+                arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt yuv422p -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2 -c:a pcm_s24le"
             } else {
-                arguments = String(format: "-y -c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p -vf scale=%@ -c:a pcm_s24le",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
+                arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt \(pix_fmt) -vf scale=\(resolution) -c:a pcm_s24le"
             }
             break
             

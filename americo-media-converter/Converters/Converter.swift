@@ -20,7 +20,7 @@ class Converter {
         self.ffmpegURL = Constants.checkBinary(binary: "ffmpeg")
         if self.ffmpegURL == nil {
             Constants.dropAlert(message: "ffmpeg is missing",
-                                  informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
+                                informative: "Install ffmpeg binary in Resources folder of the app.\nIf ffmpeg is located in /usr/local/bin/ffmpeg, copy the binary in the Resources folder of the app.")
             NSApplication.shared.terminate(nil)
         }
     }
@@ -29,17 +29,7 @@ class Converter {
                 args: String,
                 outPath: String,
                 completion: @escaping (Bool, String?, Int32) -> Void) {
-        
-        // Validate inputs
-        guard let ffmpegURL = self.ffmpegURL else {
-            DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("FFmpeg not found. Cannot start conversion.\n",
-                                                  Constants.MessageAttribute.errorMessageAttributes)
-            }
-            completion(false, "FFmpeg not found", -1)
-            return
-        }
-        
+                        
         // Update UI with start message
         delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)
         
@@ -53,7 +43,6 @@ class Converter {
         arguments.append(outPath)
         
         process.arguments = arguments
-        print("arguments: \(arguments)")
         
         // Setup pipes for output
         let outputPipe = Pipe()
@@ -68,7 +57,6 @@ class Converter {
             if let output = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     self?.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
-//                    print(output)
                 }
             }
         }
@@ -94,7 +82,6 @@ class Converter {
         
         // Run process
         do {
-            print("Starting process: \(ffmpegURL.path) with args: \(arguments)")
             try process.run()
             process.waitUntilExit()
             
@@ -125,39 +112,3 @@ class Converter {
         cancelAllProcesses()
     }
 }
-
-
-/*
-    func checkFFmpeg() -> Bool {
-        // First, try to find ffmpeg in the app bundle
-        if let url = Bundle.main.url(forResource: "ffmpeg", withExtension: nil) {
-            self.ffmpegURL = url
-            return true
-        }
-        
-        // If not found in bundle, search system paths
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        task.arguments = ["ffmpeg"]
-        
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        
-        do {
-            try task.run()
-            task.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let path = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-               !path.isEmpty {
-                self.ffmpegURL = URL(fileURLWithPath: path)
-                return true
-            }
-        } catch {
-            print("Error checking for ffmpeg: \(error)")
-        }
-        
-        return false
-    }
-*/
