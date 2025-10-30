@@ -109,7 +109,25 @@ class Converter {
         }
     }
 
-    /*
+
+    // Cancel all running processes
+    func cancelAllProcesses() {
+        for process in runningProcesses {
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+        runningProcesses.removeAll()
+    }
+    
+    /// Clean up resources
+    deinit {
+        cancelAllProcesses()
+    }
+}
+
+
+/*
     func checkFFmpeg() -> Bool {
         // First, try to find ffmpeg in the app bundle
         if let url = Bundle.main.url(forResource: "ffmpeg", withExtension: nil) {
@@ -142,21 +160,4 @@ class Converter {
         
         return false
     }
-    */
-    // Cancel all running processes
-    func cancelAllProcesses() {
-        for process in runningProcesses {
-            if process.isRunning {
-                process.terminate()
-            }
-        }
-        runningProcesses.removeAll()
-    }
-    
-    /// Clean up resources
-    deinit {
-        cancelAllProcesses()
-    }
-}
-
-
+*/

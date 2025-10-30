@@ -28,7 +28,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
     @IBOutlet weak var videoPadButton: NSButton!
     
-//    private var contentView: NSView!
         
     // MARK: Media related variables
     struct mediaFile {
@@ -44,19 +43,86 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     var newVideoExtension: String = ""
     var cv: Converter!
     var conversionType: Constants.ConversionType!
-    
+    let prefs = PreferencesManager.shared
     
     // MARK: PopUp Button titles
-    let videoCodecs = ["ProRes", "H264"]
-    let proresProfiles = ["HQ", "Standard", "LT"]
-    let h264Profiles = ["High", "Main", "Baseline"]
-    let videoResolution = ["1920x1080", "1280x720", "640x360"]
-    let h264Containers = ["MP4", "MOV"]
-    let proresContainers = ["MOV", "MXF", "MKV"]
-            
-    let prefs = PreferencesManager.shared    
+    
+    enum VideoResolution: CaseIterable {
+        case sd480, sd576
+            case hd720, hd1080
+            case cinema2K
+            case uhd4K, cinema4K, cinema5K
+            case uhd8K
+        
+        var size: (width: Int, height: Int) {
+            switch self {
+            case .sd480: return (720, 480)
+            case .sd576: return (720, 576)
+            case .hd720: return (1280, 720)
+            case .hd1080: return (1920, 1080)
+            case .cinema2K: return (2048, 1080)
+            case .uhd4K: return (3840, 2160)
+            case .cinema4K: return (4096, 2160)
+            case .cinema5K: return (5120,2700)
+            case .uhd8K: return (7680, 4320)
+            }
+        }
+        
+        var resolutionString: String {
+            return "\(size.width)x\(size.height)"
+        }
+        
+        var ffmpegString: String {
+            return "\(size.width):\(size.height)"
+        }
+    }
+    
+    enum VideoContainers:  CaseIterable {
+        case ProRes, DNxHD, H264
+                
+        var containers: [String] {
+            switch self {
+            case .ProRes: return ["MOV", "MXF", "MKV"]
+            case .DNxHD: return ["MXF", "MOV"]
+            case .H264: return ["MP4", "MOV", "MKV"]
+            }
+        }
+    }
+    
+    enum VideoCodecs: String, CaseIterable {
+        case ProRes, DNxHD, H264
+        
+        var codec: String {
+            switch self {
+            case .ProRes: return "prores_ks"
+            case .DNxHD: return "dnxhd"
+            case .H264: return "libx264"
+            }
+        }
+    }
+
+    
+    enum VideoProfiles: String, CaseIterable {
+        case ProRes, DNxHD, H264
+    
+        var profiles: [(title: String, profile: String)] {
+            switch self {
+            case .ProRes: return [("HQ", "3"), ("LT", "1"), ("Standard", "2"), ("4444", "4")]
+            case .DNxHD: return [("HQ", "dnxhr_hq"), ("Standard", "dnxhr_sq"), ("HQ 10 bits", "dnxhr_hqx"), ("HQ 4:4:4", "dnxhr_444")]
+            case .H264: return [("Main", "main"), ("High", "high"), ("Baseline", "baseline")]
+            }
+        }
+    }
     
     
+    // MARK: Dictionaries
+    let videoCodecsDict: [String: String] = [
+        "ProRes": "prores_ks",
+        "DNxHD": "dnxhd",
+        "H264": "libx264"
+    ]
+    
+
     // MARK: Initializers
     required init?(coder: NSCoder) {
         super.init(coder: coder)        
@@ -67,13 +133,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
-        setupConverterView()
         setupPlayerView()
         setupOutputView()
-        
+        setupConverterView()
     }
     
     
+    // MARK: Views setup
     func setupPlayerView() {
         playerView.wantsLayer = true
         playerView.showsFrameSteppingButtons = true
@@ -88,20 +154,29 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     func setupConverterView() {
+        // Audio Buttons setup
         audioTypeButton.removeAllItems()
         audioTypeButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
         audioBitsButton.removeAllItems()
         audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
         audioFrequencyButton.removeAllItems()
         audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
+        
+        // Video Buttons setup
         videoCodecButton.removeAllItems()
-        videoCodecButton.addItems(withTitles: videoCodecs)
+        videoCodecButton.addItems(withTitles: VideoCodecs.allCases.map { $0.rawValue })
+//        videoCodecButton.addItems(withTitles: Array(videoCodecsDict.keys))
+        videoCodecButton.selectItem(withTitle: "ProRes")
         videoProfileButton.removeAllItems()
-        videoProfileButton.addItems(withTitles: proresProfiles)
+        videoProfileButton.addItems(withTitles: VideoProfiles.ProRes.profiles.map { $0.title})
+        videoProfileButton.selectItem(withTitle: "HQ")
         videoResolutionButton.removeAllItems()
-        videoResolutionButton.addItems(withTitles: videoResolution)
+        videoResolutionButton.addItems(withTitles: VideoResolution.allCases.map { $0.resolutionString })
+        videoResolutionButton.selectItem(withTitle: "1920x1080")
         videoContainerButton.removeAllItems()
-        videoContainerButton.addItems(withTitles: proresContainers)
+        videoContainerButton.addItems(withTitles: VideoContainers.ProRes.containers)
+
+        videoContainerButton.selectItem(withTitle: "MOV")
         videoPadButton.state = .off
     }
     
@@ -245,6 +320,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
             break
             
+        case "DNxHD":
+            let resolution = videoResolutionButton.title.components(separatedBy: .letters)
+            if videoPadButton.state == .on {
+                arguments = String(format: "-y -c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p -vf scale=%@:%@:force_original_aspect_ratio=decrease,pad=%@:%@:(ow-iw)/2:(oh-ih)/2 -c:a pcm_s24le", resolution[0], resolution[1], resolution[0], resolution[1])
+            } else {
+                arguments = String(format: "-y -c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p -vf scale=%@ -c:a pcm_s24le",                                            videoResolutionButton.title.replacingOccurrences(of: "x", with: ":"))
+            }
+            break
+            
         default:
             return
         }
@@ -256,11 +340,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-//                    print(exitCode)
                     print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-//                    print(exitCode)
                     print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
@@ -301,20 +383,28 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
     
     
-    
     @IBAction func videoCodecChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "ProRes":
             videoProfileButton.removeAllItems()
-            videoProfileButton.addItems(withTitles: proresProfiles)
+            videoProfileButton.addItems(withTitles: VideoProfiles.ProRes.profiles.map { $0.title})
+            videoProfileButton.selectItem(withTitle: "HQ")
             videoContainerButton.removeAllItems()
-            videoContainerButton.addItems(withTitles: proresContainers)
+            videoContainerButton.addItems(withTitles: VideoContainers.ProRes.containers)
             break
         case "H264":
             videoProfileButton.removeAllItems()
-            videoProfileButton.addItems(withTitles: h264Profiles)
+            videoProfileButton.addItems(withTitles: VideoProfiles.H264.profiles.map { $0.title})
+            videoProfileButton.selectItem(withTitle: "Main")
             videoContainerButton.removeAllItems()
-            videoContainerButton.addItems(withTitles: h264Containers)
+            videoContainerButton.addItems(withTitles: VideoContainers.H264.containers)
+            break
+        case "DNxHD":
+            videoProfileButton.removeAllItems()
+            videoProfileButton.addItems(withTitles: VideoProfiles.DNxHD.profiles.map { $0.title})
+            videoProfileButton.selectItem(withTitle: "HQ")
+            videoContainerButton.removeAllItems()
+            videoContainerButton.addItems(withTitles: VideoContainers.DNxHD.containers)
             break
         default:
             break
