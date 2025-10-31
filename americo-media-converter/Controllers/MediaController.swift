@@ -4,7 +4,6 @@ import AVFoundation
 
 
 class MediaController {
-    
     var urlAsset: AVURLAsset!
     var videoFormatDesc: CMFormatDescription!
     var audioFormatDesc: CMFormatDescription!
@@ -150,7 +149,7 @@ class MediaController {
                         switch CMFormatDescriptionGetMediaType(desc) {
                             case kCMMediaType_Video:
                                 format["videoDesc"] = desc
-                                format["rate"] = getFrameRate(jsonData)  //Float(0.0)
+                                format["rate"] = getFrameRate(jsonData)
                                 format["icon"] = "video"
                                 break
                                 
@@ -216,14 +215,14 @@ class MediaController {
             switch track.mediaType {
             case .video:
                 videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
-                print("Video Format Desc: \(String(describing: videoFormatDesc))")
+//                print("Video Format Desc: \(String(describing: videoFormatDesc))")
                 format["videoDesc"] = videoFormatDesc
                 format["rate"] = track.nominalFrameRate
                 format["icon"] = "video"
                 break
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
-                print("Audio Format Desc: \(String(describing: audioFormatDesc))")
+//                print("Audio Format Desc: \(String(describing: audioFormatDesc))")
                 
                 format["audioDesc"] = audioFormatDesc
                 format["icon"] = "hifispeaker"
@@ -264,7 +263,7 @@ class MediaController {
     
     func checkFFprobeFile(for url: URL) throws -> Int32 {
         let process = Process()
-        process.executableURL = ffprobeURL  //URL(fileURLWithPath: "/usr/local/bin/ffprobe")
+        process.executableURL = ffprobeURL
         process.arguments = [
             "-ss",
             "00:29:59",
@@ -355,7 +354,6 @@ class MediaController {
             throw FormatDescriptionError.missingRequiredField("width or height")
         }
         
-//        let codecType = fourCharCode(from: stream.codecName)
         guard let codecType = fourCharCode(from: stream.codecName) else {
             throw FormatDescriptionError.creationFailed
         }
@@ -382,6 +380,7 @@ class MediaController {
         if let formatName = stream.codecLongName {
             extensions["FormatName"] = formatName
         }
+            
         // Add color information if available
         if let colorPrimaries = stream.colorPrimaries {
             extensions[kCVImageBufferColorPrimariesKey as String] = colorPrimaries
@@ -435,7 +434,6 @@ class MediaController {
         }
         
         let channels = UInt32(stream.channels ?? 2)
-//        let codecType = fourCharCode(from: stream.codecName)
         guard let codecType = fourCharCode(from: stream.codecName) else {
             throw FormatDescriptionError.creationFailed
         }
@@ -499,6 +497,7 @@ class MediaController {
         return formatDesc
     }
 
+    
     
 // MARK: - Helper Functions
 

@@ -32,7 +32,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     // MARK: Media related variables
     struct mediaFile {
         var mfURL: URL
-        var formatDescription: [String: Any] = [:] //CMFormatDescription
+        var formatDescription: [String: Any] = [:]
     }
     
     var files: [mediaFile] = []
@@ -204,7 +204,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
-        
         if prefs.defaultAudioDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
         } else {
@@ -224,20 +223,21 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         switch audioTypeButton.title {
         case "WAV":
             if audioBitsButton.title == "24" {
-                arguments = String(format: "-y -sample_fmt s32 -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioFrequencyButton.title ) // FFMPEG
+                arguments = "-y -sample_fmt s32 -c:a pcm_s\(audioBitsButton.title)le -ar \(audioFrequencyButton.title)"
             } else {
-                arguments = String(format: "-y -sample_fmt s%@ -c:a pcm_s%@le -ar %@", audioBitsButton.title, audioBitsButton.title, audioFrequencyButton.title )
+                arguments = "-y -sample_fmt s\(audioBitsButton.title) -c:a pcm_s\(audioBitsButton.title)le -ar \(audioFrequencyButton.title)"
             }
             break
+            
         case "AAC":
             let bufferSize = Int(audioBitsButton.title)! * 2
-            arguments = String(format: "-y -vn -c:a aac -b:a %@k -maxrate %@k -bufsize %@k -ar %@", audioBitsButton.title, audioBitsButton.title, String(bufferSize), audioFrequencyButton.title) //FFMPEG
-            // arguments = String(format: "-v -f m4af -d aac -s 0 -b %@000 -o", audioBitsButton.title)  // AFCONVERT
+            arguments = "-y -vn -c:a aac -b:a \(audioBitsButton.title)k -maxrate \(audioBitsButton.title)k -bufsize \(bufferSize)k -ar \(audioFrequencyButton.title)"
             break
+            
         case "MP3":
-            //arguments = String(format: "-b %@ -o", audioBitsButton.title) // LAME
-            arguments = String(format: "-y -codec:a libmp3lame -b:a %@k -ar %@", audioBitsButton.title, audioFrequencyButton.title) //FFMPEG
+            arguments = "-y -codec:a libmp3lame -b:a \(audioBitsButton.title)k -ar \(audioFrequencyButton.title)"
             break
+            
         default:
             audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: Constants.MessageAttribute.errorMessageAttributes))
             return
@@ -258,16 +258,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
             let outPath = composeFileURL(of: file.mfURL, to: newAudioExtension, destinationFolder)
-            // arguments.append(outPath)
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-                    print(exitCode)
-                    print(message ?? "Success")
+//                    print(exitCode)
+//                    print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-                    print(exitCode)
-                    print(message ?? "Error")
+//                    print(exitCode)
+//                    print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
@@ -305,58 +304,54 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         var resolution: String = ""
         var videoProfile: VideoProfiles?
         var profile: String = ""
+        var pad: String = ""
+        
         if let vp = VideoProfiles.allCases.first(where: { $0.rawValue == videoCodecButton.title }) {
             videoProfile = vp
-            print("VIDEOPROFILE: \(videoProfile!)")
         }
         
         if let prof = videoProfile?.profiles.first(where: { $0.title == videoProfileButton.title })?.profile {
             profile = prof
-            print("PROFILE: \(profile)")
         }
                 
         if let res = VideoResolution.allCases.first(where: { $0.resolutionString == videoResolutionButton.title })?.ffmpegString {
             resolution = res
-            print("RESOLUTION: \(resolution)")
         }
         
-        switch videoCodecButton.title {
-        case "ProRes":
-            if videoPadButton.state == .on {
-                arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2"
-            } else {
-                arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt yuv422p10le -vf scale=\(resolution):force_original_aspect_ratio=decrease"
-            }
-            break
-            
-        case "H264":
-            if videoPadButton.state == .on {
-                arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2 -c:a copy"
-            } else {
-                arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease -c:a copy"
-            }
-            break
-            
-        case "DNxHD":
-            var pix_fmt: String
-            switch profile {
+        if videoPadButton.state == .on {
+            pad = ",pad=\(resolution):(ow-iw)/2:(oh-ih)/2"
+        }
+        
+        var pix_fmt: String
+        switch profile {
             case "dnxhr_hqx":
                 pix_fmt = "yuv422p10le"
                 break
             case "dnxhr_444":
                 pix_fmt = "yuv444p10le"
                 break
+            case "0", "1", "2", "3":
+                pix_fmt = "yuv422p10le"
+                break
+            case "4", "5":
+                pix_fmt = "yuva444p10le"
+                break
             default:
                 pix_fmt = "yuv422p"
-            }
-                                
-            if videoPadButton.state == .on {
-                arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt yuv422p -vf scale=\(resolution):force_original_aspect_ratio=decrease,pad=\(resolution):(ow-iw)/2:(oh-ih)/2 -c:a pcm_s24le"
-            } else {
-                arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt \(pix_fmt) -vf scale=\(resolution) -c:a pcm_s24le"
-            }
+        }
+        
+        switch videoCodecButton.title {
+        case "ProRes":
+            arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a pcm_s24le"
             break
             
+        case "H264":
+            arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a aac"
+            break
+            
+        case "DNxHD":
+            arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a pcm_s24le"
+
         default:
             return
         }
@@ -368,10 +363,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-                    print(message ?? "Success")
+//                    print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-                    print(message ?? "Error")
+//                    print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
@@ -471,13 +466,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         do {
             let resourceValues = try directoryURL.resourceValues(forKeys: [.isDirectoryKey, .isWritableKey])
             if (resourceValues.isDirectory != nil && resourceValues.isWritable != nil)  {
-                print("The directory exists and we have write permissions.")
+//                print("The directory exists and we have write permissions.")
                 return true
             }
         } catch {
             Constants.dropAlert(message: "Destination path in preferences is not available or writable.",
                                 informative: "Choose a valid folder.")
-            print("An error occurred, choosing destination folder.")
+//            print("An error occurred, choosing destination folder.")
         }
         return false
     }
@@ -701,13 +696,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                                                         rate: files[row].formatDescription["rate"] as! Float)
             } else if key == "audioDesc" {
                 description += getAudioTrackDescription(audioFormatDesc: files[row].formatDescription["audioDesc"] as! CMFormatDescription)
-            } // else {
-//                if let formatDesc = files[row].formatDescription["format"] as? NSDictionary {
-//                    if let long_name = formatDesc["format_long_name"] {
-//                        description = long_name as! String
-//                    }
-//                }
-//            }
+            }
         }
         
         return description
