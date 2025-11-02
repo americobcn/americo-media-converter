@@ -38,11 +38,12 @@ class Converter {
         process.executableURL = ffmpegURL
         
         // Build arguments
-        var arguments = ["-i", fileURL.path]
+        var arguments = ["-hide_banner", "-i", fileURL.path]
         arguments.append(contentsOf: args.components(separatedBy: .whitespaces).filter { !$0.isEmpty })
         arguments.append(outPath)
         
         process.arguments = arguments
+        print(arguments.joined(separator: " "))
         
         // Setup pipes for output
         let outputPipe = Pipe()
@@ -57,6 +58,7 @@ class Converter {
             if let output = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
                     self?.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
+                    
                 }
             }
         }

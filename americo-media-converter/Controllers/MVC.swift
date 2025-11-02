@@ -17,7 +17,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBOutlet weak var audioTypeButton:NSPopUpButton!
     @IBOutlet weak var audioBitsButton:NSPopUpButton!
     @IBOutlet weak var audioFrequencyButton:NSPopUpButton!
-    
+
     
     // MARK: Video Outlets
     @IBOutlet weak var videoOutTextView: NSTextView!
@@ -26,6 +26,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBOutlet weak var videoProfileButton:NSPopUpButton!
     @IBOutlet weak var videoResolutionButton:NSPopUpButton!
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
+    @IBOutlet weak var videoFPSButton:NSPopUpButton!
     @IBOutlet weak var videoPadButton: NSButton!
     
         
@@ -39,6 +40,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     let mc = MediaController()
     var movieDepth: CFPropertyList?
     
+    private(set) var selectedVideoCodec: VideoCodecs = .ProRes
+    private(set) var selectedVideoCodecProfile: VideoProfiles = .ProRes
+    private(set) var selectedVideoResolution: VideoResolution = .hd1080
+    private(set) var selectedVideoFrameRate: VideoFrameRates = .auto
+    private(set) var selectedVideoContainer: VideoContainers = .ProRes
+    
+    private(set) var selectedAudioType: AudioTypes = .WAV
+    private(set) var selectedAudioBit: AudioBitDepth = .b24
+    private(set) var selectedAudioSampleRate: AudioSampleRate = .f48khz
+    
+    
     var newAudioExtension: String = ""
     var newVideoExtension: String = ""
     var cv: Converter!
@@ -47,12 +59,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     // MARK: PopUp Button titles
     
-    enum VideoResolution: CaseIterable {
-        case sd480, sd576
+    enum VideoResolution: CaseIterable, Identifiable {
+            case sd480, sd576
             case hd720, hd1080
-            case cinema2K
-            case uhd4K, cinema4K, cinema5K
-            case uhd8K
+            case cinema2K, cinema4K, cinema5K
+            case uhd4K, uhd8K
+        
+        var id: Self { return self }
         
         var size: (width: Int, height: Int) {
             switch self {
@@ -61,11 +74,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             case .hd720: return (1280, 720)
             case .hd1080: return (1920, 1080)
             case .cinema2K: return (2048, 1080)
-            case .uhd4K: return (3840, 2160)
             case .cinema4K: return (4096, 2160)
             case .cinema5K: return (5120,2700)
+            case .uhd4K: return (3840, 2160)
             case .uhd8K: return (7680, 4320)
             }
+        }
+        
+        var description: String {
+            return "\(self.id) - \(size.width)x\(size.height)"
         }
         
         var resolutionString: String {
@@ -89,10 +106,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
     }
     
-    enum VideoCodecs: String, CaseIterable {
-        case ProRes = "ProRes"
-        case DNxHD = "DNxHD"
-        case H264 = "H264"
+    enum VideoCodecs: String, CaseIterable, Identifiable {
+        case ProRes, DNxHD, H264
+        
+        var id: Self { return self }
         
         var codec: String {
             switch self {
@@ -104,26 +121,126 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     }
 
     
-    enum VideoProfiles: String, CaseIterable {
+    enum VideoProfiles: String, CaseIterable, Identifiable {
         case ProRes, DNxHD, H264
-    
+        
+        var id: Self { return self }
+        
         var profiles: [(title: String, profile: String)] {
             switch self {
             case .ProRes: return [("HQ", "3"), ("LT", "1"), ("Standard", "2"), ("4444", "4")]
             case .DNxHD: return [("HQ", "dnxhr_hq"), ("Standard", "dnxhr_sq"), ("HQ 10 bits", "dnxhr_hqx"), ("HQ 4:4:4", "dnxhr_444")]
-            case .H264: return [("Main", "main"), ("High", "high"), ("Baseline", "baseline")]
+            case .H264: return [("High", "high"), ("Main", "main"), ("Baseline", "baseline")]
             }
         }
     }
     
     
-    // MARK: Dictionaries
-    let videoCodecsDict: [String: String] = [
-        "ProRes": "prores_ks",
-        "DNxHD": "dnxhd",
-        "H264": "libx264"
-    ]
+    /// Common professional video frame rates used in broadcast, cinema, and streaming.
+    enum VideoFrameRates: Double, CaseIterable, Identifiable {
+        case auto = 0.0
+        case fps23_976 = 23.976
+        case fps24     = 24.0
+        case fps25     = 25.0
+        case fps29_97  = 29.97
+        case fps30     = 30.0
+        case fps48     = 48.0
+        case fps50     = 50.0
+        case fps59_94  = 59.94
+        case fps60     = 60.0
+        case fps90     = 90.0
+        case fps100    = 100.0
+        case fps119_88 = 119.88
+        case fps120    = 120.0
+
+        var id: Double { rawValue }
+
+        /// A human-readable label (e.g. “23.976 fps”).
+        var displayName: String {
+            switch self {
+            case .auto:      return "Auto"
+            case .fps23_976: return "23.976 fps (NTSC Film)"
+            case .fps24:     return "24 fps (Cinema)"
+            case .fps25:     return "25 fps (PAL)"
+            case .fps29_97:  return "29.97 fps (NTSC)"
+            case .fps30:     return "30 fps (Digital)"
+            case .fps48:     return "48 fps (HFR Cinema)"
+            case .fps50:     return "50 fps (PAL HFR)"
+            case .fps59_94:  return "59.94 fps (NTSC HFR)"
+            case .fps60:     return "60 fps (Digital HFR)"
+            case .fps90:     return "90 fps (VR)"
+            case .fps100:    return "100 fps (Broadcast HFR)"
+            case .fps119_88: return "119.88 fps (NTSC 120p)"
+            case .fps120:    return "120 fps (HFR / Gaming)"
+            }
+        }
+        
+        /// Returns the matching enum for a given display name.
+        static func fromDisplayName(_ name: String) -> VideoFrameRates? {
+            return allCases.first { $0.displayName == name }
+        }
+    }
+
     
+    enum AudioTypes: String, CaseIterable, Identifiable {
+        case WAV, MP3, AAC
+        
+        var id: Self { return self }
+        
+        var fileExt: String {
+            switch self {
+            case .WAV: return "wav"
+            case .MP3: return "mp3"
+            case .AAC: return "m4a"
+            }
+        }
+    }
+    
+    
+    enum AudioBitDepth: String, CaseIterable, Identifiable {
+        case b32, b24, b16
+        
+        var id: Self { return self }
+        
+        var bitDepth: String {
+            switch self {
+            case .b32: return "32"
+            case .b24: return "24"
+            case .b16: return "16"
+            }
+        }
+    }
+    
+    
+    enum AudioBitRates: String, CaseIterable, Identifiable {
+        case b320k, b256k, b192k, b128k
+        
+        var id: Self { return self }
+        
+        var bitRate: String {
+            switch self {
+            case .b320k: return "320"
+            case .b256k: return "256"
+            case .b192k: return "192"
+            case .b128k: return "128"
+            }
+        }
+    }
+    
+    
+    enum AudioSampleRate: String, CaseIterable, Identifiable {
+        case f96khz, f48khz, f44khz
+        
+        var id: Self { return self }
+        
+        var frequency: String {
+            switch self {
+            case .f96khz: return "96000"
+            case .f48khz: return "48000"
+            case .f44khz: return "44100"
+            }
+        }
+    }
 
     // MARK: Initializers
     required init?(coder: NSCoder) {
@@ -157,28 +274,33 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     func setupConverterView() {
         // Audio Buttons setup
+        audioBitsLabel.stringValue = "Bit Depth"
         audioTypeButton.removeAllItems()
-        audioTypeButton.addItems(withTitles: ["MP3" , "AAC", "WAV"])
+        audioTypeButton.addItems(withTitles: AudioTypes.allCases.map { $0.rawValue })
+        audioTypeButton.selectItem(withTitle: selectedAudioType.rawValue)
         audioBitsButton.removeAllItems()
-        audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+        audioBitsButton.addItems(withTitles: AudioBitDepth.allCases.map { $0.bitDepth })
+        audioBitsButton.selectItem(withTitle: selectedAudioBit.bitDepth)
         audioFrequencyButton.removeAllItems()
-        audioFrequencyButton.addItems(withTitles: ["48000", "44100"])
+        audioFrequencyButton.addItems(withTitles: AudioSampleRate.allCases.map { $0.frequency })
+        audioFrequencyButton.selectItem(withTitle: selectedAudioSampleRate.frequency)
         
         // Video Buttons setup
         videoCodecButton.removeAllItems()
         videoCodecButton.addItems(withTitles: VideoCodecs.allCases.map { $0.rawValue })
-//        videoCodecButton.addItems(withTitles: Array(videoCodecsDict.keys))
-        videoCodecButton.selectItem(withTitle: "ProRes")
+        videoCodecButton.selectItem(withTitle: selectedVideoCodec.rawValue)
         videoProfileButton.removeAllItems()
         videoProfileButton.addItems(withTitles: VideoProfiles.ProRes.profiles.map { $0.title})
-        videoProfileButton.selectItem(withTitle: "HQ")
+        videoProfileButton.selectItem(withTitle: selectedVideoCodecProfile.profiles[0].title)
         videoResolutionButton.removeAllItems()
         videoResolutionButton.addItems(withTitles: VideoResolution.allCases.map { $0.resolutionString })
-        videoResolutionButton.selectItem(withTitle: "1920x1080")
+        videoResolutionButton.selectItem(withTitle: selectedVideoResolution.resolutionString)
+        videoFPSButton.removeAllItems()
+        videoFPSButton.addItems(withTitles: VideoFrameRates.allCases.map { $0.displayName })
+        videoFPSButton.selectItem(withTitle: selectedVideoFrameRate.displayName)
         videoContainerButton.removeAllItems()
         videoContainerButton.addItems(withTitles: VideoContainers.ProRes.containers)
-
-        videoContainerButton.selectItem(withTitle: "MOV")
+        videoContainerButton.selectItem(withTitle: selectedVideoContainer.containers.first!)
         videoPadButton.state = .off
     }
     
@@ -202,7 +324,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         conversionType = .audio
         
-        // DEAL WITH FOLDERS DEFAULTS
+        /// DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
         if prefs.defaultAudioDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
@@ -218,10 +340,13 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             return
         }
         
+        
+        /// Constructing audio conversion arguments
+        newAudioExtension = selectedAudioType.fileExt
         var arguments: String = ""
         
-        switch audioTypeButton.title {
-        case "WAV":
+        switch  selectedAudioType { //audioTypeButton.title
+        case .WAV:
             if audioBitsButton.title == "24" {
                 arguments = "-y -sample_fmt s32 -c:a pcm_s\(audioBitsButton.title)le -ar \(audioFrequencyButton.title)"
             } else {
@@ -229,31 +354,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
             break
             
-        case "AAC":
+        case .AAC:
             let bufferSize = Int(audioBitsButton.title)! * 2
-            arguments = "-y -vn -c:a aac -b:a \(audioBitsButton.title)k -maxrate \(audioBitsButton.title)k -bufsize \(bufferSize)k -ar \(audioFrequencyButton.title)"
+            arguments = "-y -vn -c:a \(Constants.aacCodec) -b:a \(audioBitsButton.title)k -maxrate \(audioBitsButton.title)k -bufsize \(bufferSize)k -ar \(audioFrequencyButton.title)"
             break
             
-        case "MP3":
+        case .MP3:
             arguments = "-y -codec:a libmp3lame -b:a \(audioBitsButton.title)k -ar \(audioFrequencyButton.title)"
             break
-            
-        default:
-            audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: Constants.MessageAttribute.errorMessageAttributes))
-            return
+                    
         }
         
-        switch audioTypeButton.title {
-            case "MP3":
-                newAudioExtension = "mp3"
-                break
-            case "AAC":
-                newAudioExtension = "m4a"
-                break
-            default:
-                newAudioExtension = "wav"
-                break
-        }
+        
         
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
@@ -300,17 +412,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             return
         }
             
+        /// Constructtion of ffmpeg arguments
         var arguments: String = ""
         var resolution: String = ""
-        var videoProfile: VideoProfiles?
         var profile: String = ""
         var pad: String = ""
         
-        if let vp = VideoProfiles.allCases.first(where: { $0.rawValue == videoCodecButton.title }) {
-            videoProfile = vp
-        }
-        
-        if let prof = videoProfile?.profiles.first(where: { $0.title == videoProfileButton.title })?.profile {
+    
+        if let prof = selectedVideoCodecProfile.profiles.first(where: { $0.title == videoProfileButton.title })?.profile {
             profile = prof
         }
                 
@@ -322,16 +431,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             pad = ",pad=\(resolution):(ow-iw)/2:(oh-ih)/2"
         }
         
+        /// Set pixel formats
         var pix_fmt: String
         switch profile {
-            case "dnxhr_hqx":
+            case "dnxhr_hqx", "0", "1", "2", "3":
                 pix_fmt = "yuv422p10le"
                 break
             case "dnxhr_444":
                 pix_fmt = "yuv444p10le"
-                break
-            case "0", "1", "2", "3":
-                pix_fmt = "yuv422p10le"
                 break
             case "4", "5":
                 pix_fmt = "yuva444p10le"
@@ -340,17 +447,41 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 pix_fmt = "yuv422p"
         }
         
+        /// Set the frame per seconds
+        var newFPS: String = ""
+        switch selectedVideoFrameRate.rawValue {
+        case 0.0:
+            newFPS = ""
+            break
+        case 29.97:
+            newFPS = ",fps=30000/1001"
+            break
+        case 23.976:
+            newFPS = ",fps=24000/1001"
+            break
+        case 59.94:
+            newFPS = ",fps=60000/1001"
+            break
+        default:
+                newFPS = ",fps=\(selectedVideoFrameRate.rawValue)"
+        }
+        
+        var videoCodec: String = "-c:v h264"
+        if Constants.hasLibx264 {
+            videoCodec = "-c:v libx264 -profile:v high422 -preset slow -crf 18"
+        }
+        
         switch videoCodecButton.title {
         case "ProRes":
-            arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a pcm_s24le"
+            arguments = "-y -c:v prores_ks -profile:v \(profile) -qscale:v 9 -vendor apl0 -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad)\(newFPS) -c:a pcm_s24le"
             break
             
         case "H264":
-            arguments = "-y -c:v libx264 -profile:v high422 -preset slow -crf 18 -vf format=yuv420p -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a aac"
+            arguments = "-y \(videoCodec) -vf format=\(pix_fmt),scale=\(resolution):force_original_aspect_ratio=decrease\(pad)\(newFPS) -c:a aac"
             break
             
         case "DNxHD":
-            arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad) -c:a pcm_s24le"
+            arguments = "-y -c:v dnxhd -profile:v \(profile) -pix_fmt \(pix_fmt) -vf scale=\(resolution):force_original_aspect_ratio=decrease\(pad)\(newFPS)  -c:a pcm_s24le"
 
         default:
             return
@@ -378,27 +509,39 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "WAV":
+            selectedAudioType = .WAV
             audioBitsLabel.stringValue = "Bit Depth"
             audioBitsButton.removeAllItems()
-            audioBitsButton.addItems(withTitles: ["24", "16", "32"])
+            audioBitsButton.addItems(withTitles: AudioBitDepth.allCases.map { $0.bitDepth })
+            audioBitsButton.selectItem(withTitle: AudioBitDepth.b24.bitDepth)
             audioFrequencyButton.removeAllItems()
-            audioFrequencyButton.addItems(withTitles: ["96000","48000","44100"])
+            audioFrequencyButton.addItems(withTitles: AudioSampleRate.allCases.map { $0.frequency })
+            audioFrequencyButton.selectItem(withTitle: AudioSampleRate.f48khz.frequency)
             audioFrequencyButton.selectItem(at: 1)
             break
+            
         case "AAC":
+            selectedAudioType = .AAC
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
-            audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            audioBitsButton.addItems(withTitles: AudioBitRates.allCases.map { $0.bitRate })
+            audioBitsButton.selectItem(withTitle: AudioBitRates.b320k.bitRate)
             audioFrequencyButton.removeAllItems()
-            audioFrequencyButton.addItems(withTitles: ["48000","44100"])
+            audioFrequencyButton.addItems(withTitles: [AudioSampleRate.f48khz, AudioSampleRate.f44khz ].map { $0.frequency })
+            audioFrequencyButton.selectItem(withTitle: AudioSampleRate.f48khz.frequency)
             break
-        case "MP3":            
+            
+        case "MP3":
+            selectedAudioType = .MP3
             audioBitsLabel.stringValue = "Bit Rate"
             audioBitsButton.removeAllItems()
-            audioBitsButton.addItems(withTitles: ["320", "256", "192", "128"])
+            audioBitsButton.addItems(withTitles: AudioBitRates.allCases.map { $0.bitRate })
+            audioBitsButton.selectItem(withTitle: AudioBitRates.b320k.bitRate)
             audioFrequencyButton.removeAllItems()
-            audioFrequencyButton.addItems(withTitles: ["48000","44100"])
+            audioFrequencyButton.addItems(withTitles: [AudioSampleRate.f48khz, AudioSampleRate.f44khz ].map { $0.frequency })
+            audioFrequencyButton.selectItem(withTitle: AudioSampleRate.f48khz.frequency)
             break
+            
         default:
             audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: "Something went wrong" , attributes: Constants.MessageAttribute.errorMessageAttributes))
             return
@@ -409,31 +552,58 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     @IBAction func videoCodecChanged(_ sender: NSPopUpButton) {
         switch sender.title {
         case "ProRes":
+            selectedVideoCodec = .ProRes
+            selectedVideoCodecProfile = .ProRes
+            selectedVideoContainer = .ProRes
+            
             videoProfileButton.removeAllItems()
             videoProfileButton.addItems(withTitles: VideoProfiles.ProRes.profiles.map { $0.title})
-            videoProfileButton.selectItem(withTitle: "HQ")
+            videoProfileButton.selectItem(withTitle: selectedVideoCodecProfile.profiles[0].title)
+            
             videoContainerButton.removeAllItems()
             videoContainerButton.addItems(withTitles: VideoContainers.ProRes.containers)
+            videoContainerButton.selectItem(withTitle: selectedVideoContainer.containers[0])
             break
+            
         case "H264":
+            selectedVideoCodec = .H264
+            selectedVideoCodecProfile = .H264
+            selectedVideoContainer = .H264
+            
             videoProfileButton.removeAllItems()
             videoProfileButton.addItems(withTitles: VideoProfiles.H264.profiles.map { $0.title})
-            videoProfileButton.selectItem(withTitle: "Main")
+            videoProfileButton.selectItem(withTitle: selectedVideoCodecProfile.profiles[0].title)
+            
             videoContainerButton.removeAllItems()
             videoContainerButton.addItems(withTitles: VideoContainers.H264.containers)
+            videoContainerButton.selectItem(withTitle: selectedVideoContainer.containers[0])
             break
+            
         case "DNxHD":
+            selectedVideoCodec = .DNxHD
+            selectedVideoCodecProfile = .DNxHD
+            selectedVideoContainer = .DNxHD
+            
             videoProfileButton.removeAllItems()
             videoProfileButton.addItems(withTitles: VideoProfiles.DNxHD.profiles.map { $0.title})
-            videoProfileButton.selectItem(withTitle: "HQ")
+            videoProfileButton.selectItem(withTitle: selectedVideoCodecProfile.profiles[0].title)
+            
             videoContainerButton.removeAllItems()
             videoContainerButton.addItems(withTitles: VideoContainers.DNxHD.containers)
+            videoContainerButton.selectItem(withTitle: self.selectedVideoContainer.containers[0])
             break
         default:
             break
         }
     }
     
+    /// IBAction called when the user changes the frame rate in the NSPopUpButton.
+    @IBAction func videoFPSButtonChanged(_ sender: NSPopUpButton) {
+        guard let title = sender.titleOfSelectedItem,
+              let rate = VideoFrameRates.fromDisplayName(title) else { return }
+        selectedVideoFrameRate = rate
+        print("Selected Frame Rate: \(rate.displayName) (\(rate.rawValue) fps)")
+    }
     
     
     @IBAction func openPreferences(_ sender: NSMenuItem) {
