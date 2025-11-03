@@ -477,7 +477,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             break
             
         case "H264":
-            arguments = "-y \(videoCodec) -vf format=\(pix_fmt),scale=\(resolution):force_original_aspect_ratio=decrease\(pad)\(newFPS) -c:a aac"
+            arguments = "-y \(videoCodec) -vf format=\(pix_fmt),scale=\(resolution):force_original_aspect_ratio=decrease\(pad)\(newFPS) -c:a \(Constants.aacCodec) -b:a 320k"
             break
             
         case "DNxHD":
