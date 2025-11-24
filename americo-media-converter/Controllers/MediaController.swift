@@ -150,11 +150,13 @@ class MediaController {
                             case kCMMediaType_Video:
                                 format["videoDesc"] = desc
                                 format["rate"] = getFrameRate(jsonData)
+                                format["duration"] = getDuration(for: url)
                                 format["icon"] = "video"
                                 break
                                 
                             case kCMMediaType_Audio:
                                 format["audioDesc"] = desc
+                                format["duration"] = getDuration(for: url)
                                 format["icon"] = "hifispeaker"
                                 break
                                 
@@ -188,13 +190,10 @@ class MediaController {
         let decoder = JSONDecoder()
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
-//            print("ffprobeOutput frame rate: \(ffprobeOutput.streams[0].rFrameRate!)")
             let formula = ffprobeOutput.streams[0].rFrameRate
             let nums = formula!.split(separator: "/")
-//            print("nums: \(nums)")
             let num1 = Float(nums[0])!
             let num2 = Float(nums[1])!
-//            print("FPS: \(num1 / num2)")
             return num1 / num2
             
         } catch {
@@ -223,10 +222,10 @@ class MediaController {
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
 //                print("Audio Format Desc: \(String(describing: audioFormatDesc))")
-                
                 format["audioDesc"] = audioFormatDesc
                 format["icon"] = "hifispeaker"
                 break
+                
             case .timecode:
                 timeFromatDesc = ((track.formatDescriptions[0]) as! CMTimeCodeFormatDescription)
                 format["tcDesc"] = timeFromatDesc
@@ -260,6 +259,44 @@ class MediaController {
     }
     
     
+    func getDuration(for url: URL) -> Double {
+        var duration:Double = 0.0001
+        let process = Process()
+        process.executableURL = ffprobeURL
+        process.arguments = [
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            url.path
+        ]
+        
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+        
+        let fileHandle = outputPipe.fileHandleForReading
+        fileHandle.readabilityHandler = { [weak self]  handle in
+            let data = handle.availableData
+            if let output = String(data: data, encoding: .utf8) {
+                duration = Double(output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0.0001
+            }
+        }
+        
+        do {
+            try process.run()
+        } catch  {
+            print("Error getting duration")
+        }
+                
+        print("Duration: \(duration)")
+        return duration
+    }
+
+    
+    
     
     func checkFFprobeFile(for url: URL) throws -> Int32 {
         let process = Process()
@@ -278,6 +315,7 @@ class MediaController {
         process.standardOutput = pipe
         
         try process.run()
+        //
         process.waitUntilExit()
             
         return process.terminationStatus

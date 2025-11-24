@@ -2,11 +2,17 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , ConverterDelegate { // NavigationBarDelegate
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , ConverterDelegate { 
     
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
     @IBOutlet weak var playerView: AVPlayerView!
+    @IBOutlet weak var startConversionButton: NSButton!
+    @IBOutlet weak var cancelConversionButton: NSButton!
+    @IBOutlet weak var converterTabView: NSTabView!
+    @IBOutlet weak var audioTabView: NSTabViewItem!
+    @IBOutlet weak var videoTabView: NSTabViewItem!
+    
     
     // MARK: Audio Outlets
     @IBOutlet weak var audioOutTextView: NSTextView!
@@ -273,6 +279,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     func setupConverterView() {
+        cancelConversionButton.isEnabled = false
+        startConversionButton.isEnabled = false
+        
         // Audio Buttons setup
         audioBitsLabel.stringValue = "Bit Depth"
         audioTypeButton.removeAllItems()
@@ -315,15 +324,40 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     //MARK: IBAction Methods
-    @IBAction func convertAudio(_ sender: NSButton) {
+    
+    @IBAction func startConversion(_ sender: NSButton) {
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+        videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         
         if files.count < 1 {
+            cancelConversionButton.isEnabled = false
             return
         }
         
-        conversionType = .audio
-        
+        cancelConversionButton.isEnabled = true
+                
+        switch converterTabView.selectedTabViewItem?.label {
+            case "Audio":
+            conversionType = .audio
+            convertAudio()
+            break
+            case "Video":
+                conversionType = .video
+            convertVideo()
+                break
+            default:
+                break
+         }
+    }
+    
+    
+    
+    @IBAction func cancelConversion(_ sender: NSButton) {
+        cv.cancelAllProcesses()
+    }
+    
+    
+    func convertAudio() {
         /// DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
         if prefs.defaultAudioDestination.isEmpty {
@@ -373,29 +407,19 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-//                    print(exitCode)
-//                    print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-//                    print(exitCode)
-//                    print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
         }
+        
     }
     
     
     
-    @IBAction func convertVideo(_ sender: NSButton) {
-        videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
-        
-        if files.count < 1 {
-            return
-        }
-        
-        conversionType = .video
-        
+
+    func convertVideo() {
         // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
         if prefs.defaultVideoDestination.isEmpty {
@@ -489,15 +513,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         newVideoExtension = videoContainerButton.title.lowercased() // Default extension
         for file in files {
+            print("MEDIA: \(file.formatDescription)")
             videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: Constants.MessageAttribute.regularMessageAttributes))
             let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, destinationFolder)
             cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
-//                    print(message ?? "Success")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-//                    print(message ?? "Error")
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
                 }
             }
@@ -669,13 +692,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             } else {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "hifispeaker", accessibilityDescription: nil)
             }
-            
             return viewCell
+            
         case NSUserInterfaceItemIdentifier(rawValue: "urlColumn"):
             guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "urlCell"), owner: self ) as? NSTableCellView
             else { return nil }
             viewCell.textField?.stringValue = files[row].mfURL.path
             return viewCell
+            
         default:
             return nil
         }
@@ -691,7 +715,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             let item = AVPlayerItem(url: files[selectedRow].mfURL)
             playerView.player?.replaceCurrentItem(with: item)
             playerView.player?.rate = 0.0
-            
         }
     }
     
@@ -769,7 +792,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                     }
                 }
             }
+            
             tableView.reloadData()
+            startConversionButton.isEnabled = true
             return true
         }
         
@@ -781,14 +806,18 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     // MARK: Keyboard event handlers
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
-        case 51:
-            deleteSelectedRow()
-            break
-        case 49:
-            playPause()
-            break
-        default:
-            super.keyDown(with: event)
+            case 51:
+                deleteSelectedRow()
+                if (files.count == 0) {
+                    startConversionButton.isEnabled = false
+                    cancelConversionButton.isEnabled = false
+                }
+                break
+            case 49:
+                playPause()
+                break
+            default:
+                super.keyDown(with: event)
         }
     }
     
@@ -838,6 +867,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     
+    func conversionProgress(_ seconds: Double) {
+        print("Progres: \(seconds)")
+        // guard totalDuration > 0 else { return }
+        // let percentage = min((seconds / totalDuration) * 100, 100)
+        // progressBar.doubleValue = percentage
+        // progressLabel.stringValue = String(format: "%.1f%%", percentage)
+    }
+    
+    
     private func scrollToBottom(_ textView: NSTextView) {
         textView.scrollRangeToVisible(NSRange(location: textView.string.count, length: 0))
     }
@@ -869,6 +907,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
         }
         
+        
         return description
     }
     
@@ -880,8 +919,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         var movieColorPrimaries = ""
         var movieCodec = ""
         let mediaSubType = CMFormatDescriptionGetMediaSubType(videoFormatDesc).toString()
-        // print("MEDIA SUB TYPE: \(mediaSubType)")
-        // print("MEDIA SUB TYPE: \(videoFormatDesc.mediaSubType)")
+        
         //Getting video descriptors
         let movieDimensions =  CMVideoFormatDescriptionGetDimensions(videoFormatDesc)
         if let tempPrimaries = CMFormatDescriptionGetExtension(videoFormatDesc, extensionKey: kCMFormatDescriptionExtension_ColorPrimaries) {

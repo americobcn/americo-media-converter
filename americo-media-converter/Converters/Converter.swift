@@ -2,6 +2,7 @@ import Cocoa
 
 protocol ConverterDelegate: AnyObject {
     func shouldUpdateOutView(_ text: String, _ attributes: [NSAttributedString.Key: Any])
+    func conversionProgress(_ seconds: Double)
 }
 
 
@@ -25,6 +26,8 @@ class Converter {
         }
     }
     
+    
+    
     func convert(fileURL: URL,
                 args: String,
                 outPath: String,
@@ -38,7 +41,8 @@ class Converter {
         process.executableURL = ffmpegURL
         
         // Build arguments
-        var arguments = ["-hide_banner", "-i", fileURL.path]
+        var arguments = ["-hide_banner", "-progress", "pipe:1",
+                         "-nostats", "-i", fileURL.path]
         arguments.append(contentsOf: args.components(separatedBy: .whitespaces).filter { !$0.isEmpty })
         arguments.append(outPath)
         
@@ -52,17 +56,39 @@ class Converter {
         
         // Setup readability handler
         let fileHandle = outputPipe.fileHandleForReading
+        // Progress handler
         fileHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            if data.isEmpty { return }
             if let output = String(data: data, encoding: .utf8) {
+                // Parse ffmpeg progress (out_time_ms)
+                if output.contains("out_time_ms") {
+                    let components = output.components(separatedBy: "\n")
+                    for c in components {
+                        if c.contains("out_time_ms") {
+                            let time = c.components(separatedBy: "=")
+                            if time.count == 2,
+                               let micro = Double(time[1].trimmingCharacters(in: .whitespacesAndNewlines)) {
+                               let seconds = micro / 1_000_000
+                               DispatchQueue.main.async {
+                                   self?.delegate?.conversionProgress(seconds)
+                               }
+                           }
+                        }
+                    }
+                                            
+                }                
+                                    
                 DispatchQueue.main.async {
-                    self?.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
-                    
+                    self?.delegate?.shouldUpdateOutView(
+                        output,
+                        Constants.MessageAttribute.regularMessageAttributes
+                    )
                 }
             }
         }
+
         
+    
         // Setup termination handler
         process.terminationHandler = { [weak self] process in
             let status = process.terminationStatus
@@ -85,7 +111,6 @@ class Converter {
         // Run process
         do {
             try process.run()
-            process.waitUntilExit()
             
             // Remove from tracking after completion
             self.runningProcesses.remove(process)

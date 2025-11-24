@@ -29,7 +29,7 @@ final class CustomCellView: NSTableCellView {
         label.backgroundColor = .clear
         return label
     }()
-
+    
      let cellImageView: NSImageView = {
         let imageView = NSImageView()
         imageView.wantsLayer = true
@@ -57,10 +57,12 @@ final class CustomCellView: NSTableCellView {
         addSubview(cellImageView)
         addSubview(fileNameLabel)
         addSubview(fileInfoLabel)
+        
 
         cellImageView.translatesAutoresizingMaskIntoConstraints = false
         fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
         fileInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+        
 
         NSLayoutConstraint.activate([
             // ImageView constraints
