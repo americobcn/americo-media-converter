@@ -134,31 +134,34 @@ class MediaController {
         let urlAsset = AVURLAsset(url: url)
         if urlAsset.isPlayable {
             format = getMetadata(asset: urlAsset)
+            format["duration"] = CMTimeGetSeconds(urlAsset.duration)            
             return (isPlayable: true, formats: format)
         }
         
         if isValidFFmpegCandidate(url) {
             do {
                 let jsonData = try getFFprobeJSON(for: url)
-                 let ffprobeOutput = String(decoding: jsonData, as: UTF8.self)
-                 print("JSONDATA: \(ffprobeOutput)")
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
                     var format: [String:Any] = [:]
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
                             case kCMMediaType_Video:
-                                format["videoDesc"] = desc
-                                format["rate"] = getFrameRate(jsonData)
-                                format["duration"] = getDuration(for: url)
-                                format["icon"] = "video"
-                                break
+                            format["videoDesc"] = desc
+                            format["rate"] = getFrameRate(jsonData)
+                            do {
+                                format["duration"] = try getDuration(for: url)
+                            } catch {
+                                format["duration"] = 0.0
+                            }
+                            
+                            format["icon"] = "video"
+                            break
                                 
                             case kCMMediaType_Audio:
-                                format["audioDesc"] = desc
-                                format["duration"] = getDuration(for: url)
-                                format["icon"] = "hifispeaker"
-                                break
+                            format["audioDesc"] = desc
+                            format["icon"] = "hifispeaker"
+                            break
                                 
                             case kCMMediaType_TimeCode:
                                 format["tcDesc"] = desc
@@ -198,10 +201,30 @@ class MediaController {
             
         } catch {
             print("ERROR")
+            return 0.0
         }
-        return 0.0
     }
     
+    
+    func getDuration(for url: URL) throws -> Double {
+        let process = Process()
+        process.executableURL = ffprobeURL
+        // ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 input.mp4
+        process.arguments = [ "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", url.path ]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let secondsStr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+            return  secondsStr.toDouble() ?? 0.01 //Double(secondsStr.trimmingCharacters(in: .whitespacesAndNewlines))!
+        }
+        return 0.01
+    }
+
     
 
     func getMetadata(asset: AVURLAsset ) -> [String: Any] {
@@ -214,14 +237,13 @@ class MediaController {
             switch track.mediaType {
             case .video:
                 videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
-//                print("Video Format Desc: \(String(describing: videoFormatDesc))")
                 format["videoDesc"] = videoFormatDesc
                 format["rate"] = track.nominalFrameRate
                 format["icon"] = "video"
                 break
+                
             case .audio:
                 audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
-//                print("Audio Format Desc: \(String(describing: audioFormatDesc))")
                 format["audioDesc"] = audioFormatDesc
                 format["icon"] = "hifispeaker"
                 break
@@ -259,45 +281,7 @@ class MediaController {
     }
     
     
-    func getDuration(for url: URL) -> Double {
-        var duration:Double = 0.0001
-        let process = Process()
-        process.executableURL = ffprobeURL
-        process.arguments = [
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            url.path
-        ]
-        
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-        
-        let fileHandle = outputPipe.fileHandleForReading
-        fileHandle.readabilityHandler = { [weak self]  handle in
-            let data = handle.availableData
-            if let output = String(data: data, encoding: .utf8) {
-                duration = Double(output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0.0001
-            }
-        }
-        
-        do {
-            try process.run()
-        } catch  {
-            print("Error getting duration")
-        }
-                
-        print("Duration: \(duration)")
-        return duration
-    }
-
-    
-    
-    
+    // NEV
     func checkFFprobeFile(for url: URL) throws -> Int32 {
         let process = Process()
         process.executableURL = ffprobeURL
@@ -315,8 +299,8 @@ class MediaController {
         process.standardOutput = pipe
         
         try process.run()
-        //
-        process.waitUntilExit()
+        
+        // process.waitUntilExit()
             
         return process.terminationStatus
     }
@@ -587,3 +571,11 @@ class MediaController {
     }
 }
 
+
+extension String {
+    func toDouble() -> Double? {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.locale = Locale(identifier: "en_US_POSIX")
+        return numberFormatter.number(from: self)?.doubleValue
+    }
+}

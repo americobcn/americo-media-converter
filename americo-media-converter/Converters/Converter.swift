@@ -32,7 +32,7 @@ class Converter {
                 args: String,
                 outPath: String,
                 completion: @escaping (Bool, String?, Int32) -> Void) {
-                        
+        
         // Update UI with start message
         delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)
         
@@ -69,8 +69,8 @@ class Converter {
                             if time.count == 2,
                                let micro = Double(time[1].trimmingCharacters(in: .whitespacesAndNewlines)) {
                                let seconds = micro / 1_000_000
-                               DispatchQueue.main.async {
-                                   self?.delegate?.conversionProgress(seconds)
+                                DispatchQueue.main.async {
+                                    self?.delegate?.conversionProgress(seconds)
                                }
                            }
                         }
@@ -103,17 +103,17 @@ class Converter {
                 }
                 completion(status == 0, nil, status)
             }
+            
+            // Remove from tracking after completion
+            self?.runningProcesses.remove(process)
         }
         
         // Track process for cleanup
         runningProcesses.insert(process)
-        
-        // Run process
+                
         do {
             try process.run()
             
-            // Remove from tracking after completion
-            self.runningProcesses.remove(process)
         } catch {
             DispatchQueue.main.async {
                 self.delegate?.shouldUpdateOutView("\(fileURL.lastPathComponent): Failed to start conversion process: \(error.localizedDescription)\n",
@@ -128,14 +128,16 @@ class Converter {
     func cancelAllProcesses() {
         for process in runningProcesses {
             if process.isRunning {
+                process.interrupt()
                 process.terminate()
             }
         }
         runningProcesses.removeAll()
     }
-    
-    /// Clean up resources
+        
+    // Clean up resources
     deinit {
         cancelAllProcesses()
     }
+    
 }

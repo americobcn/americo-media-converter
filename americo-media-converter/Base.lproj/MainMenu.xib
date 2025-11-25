@@ -35,9 +35,7 @@
                 <outlet property="converterTabView" destination="A3l-Ya-IUo" id="ATg-FE-JtT"/>
                 <outlet property="filesTableView" destination="7iD-HE-fPz" id="hG7-DV-ydm"/>
                 <outlet property="playerView" destination="dpT-su-Ypf" id="eZ6-kR-tvV"/>
-                <outlet property="startConversion" destination="xBx-Yn-hD9" id="0wO-Hl-pfD"/>
                 <outlet property="startConversionButton" destination="xBx-Yn-hD9" id="V1Y-x0-LMx"/>
-                <outlet property="stopConversion" destination="fXC-Of-BXf" id="ucr-Xp-VZl"/>
                 <outlet property="videoCodecButton" destination="odS-sb-xC9" id="BsI-aT-7v5"/>
                 <outlet property="videoContainerButton" destination="TO0-55-ZTx" id="9bD-bb-tUB"/>
                 <outlet property="videoFPSButton" destination="tHJ-Ot-zKj" id="7NP-xd-Se7"/>
@@ -342,7 +340,7 @@
                                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="yxa-0B-QEd"/>
                                                         </imageView>
                                                         <textField identifier="fileInfoField" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="dbZ-1F-iES">
-                                                            <rect key="frame" x="89" y="-21" width="390" height="15"/>
+                                                            <rect key="frame" x="89" y="-21" width="389" height="15"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMinY="YES"/>
                                                             <textFieldCell key="cell" lineBreakMode="clipping" allowsUndo="NO" id="pbs-wD-1zl">
                                                                 <font key="font" usesAppearanceFont="YES"/>
@@ -351,7 +349,7 @@
                                                             </textFieldCell>
                                                         </textField>
                                                         <textField identifier="fileNameField" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="teO-Ce-KMm">
-                                                            <rect key="frame" x="89" y="22" width="390" height="15"/>
+                                                            <rect key="frame" x="89" y="22" width="389" height="15"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxY="YES"/>
                                                             <textFieldCell key="cell" lineBreakMode="clipping" id="hpW-Zc-mSD">
                                                                 <font key="font" usesAppearanceFont="YES"/>

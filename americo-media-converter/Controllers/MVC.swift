@@ -399,8 +399,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                     
         }
         
-        
-        
+                
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
             let outPath = composeFileURL(of: file.mfURL, to: newAudioExtension, destinationFolder)
@@ -413,12 +412,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 }
             }
         }
-        
     }
     
     
     
-
     func convertVideo() {
         // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
@@ -685,7 +682,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         case NSUserInterfaceItemIdentifier(rawValue: "fileColumn"):
             guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "fileCell"), owner: self ) as? CustomCellView
             else { return nil }
-            viewCell.fileNameLabel.stringValue = files[row].mfURL.lastPathComponent
+            viewCell.fileNameLabel.stringValue = "\(files[row].mfURL.lastPathComponent) | \(formatSecondsTime(files[row].formatDescription["duration"] as! Double))"
             viewCell.fileInfoLabel.stringValue = getFormatDescription(row: row)
             if files[row].formatDescription.keys.contains("videoDesc") {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "video", accessibilityDescription: nil)
@@ -907,7 +904,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             }
         }
         
-        
         return description
     }
     
@@ -1004,7 +1000,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
                 }
         }
         
-        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: %ibits \n", Int(truncating: movieDepth as? NSNumber ?? 0 ))
+        let depth = Int(truncating: movieDepth as? NSNumber ?? 0 )
+        videoDescription = String(format: "Video: \(movieCodec), \(String(describing: movieDimensions.width))x\(String(describing: movieDimensions.height))\(interlacedPregressive), \(videoFrameRateString)fps\(movieColorPrimaries), Depth: \(depth)\n")
+        
         return videoDescription
     }
     
@@ -1099,11 +1097,25 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             channelsDescription  = String("\(channels)")
             break
         }
-        
-        audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz\n", sampleRate)
+                
+        audioDescription = String(format:"Audio: \(formatIDDescription), \(bitsPerChannelDescription)\(channelsDescription), %2.0fHz.\n", sampleRate)
         return audioDescription
     }
+
     
+    func formatSecondsTime(_ seconds: Double) -> String {
+        // Handle invalid or indefinite time
+        guard !seconds.isNaN, seconds >= 0 else {
+            return "00:00:00"
+        }
+        
+        let hours = Int(seconds) / 3600
+        let minutes = (Int(seconds) % 3600) / 60
+        let seconds = Int(seconds) % 60
+        
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
     
 }
 
