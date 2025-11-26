@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */; };
 		1E3B81092D9010CC003FABF5 /* MediaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3B81082D9010CC003FABF5 /* MediaController.swift */; };
-		1E4A29B52D8F18C000253887 /* NavigationBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4A29B42D8F18C000253887 /* NavigationBarView.swift */; };
+		1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */; };
 		1EBD8D1C2E9A7B230022B1B5 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */; };
 		1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA4B692D8DC21E005152DF /* AppDelegate.swift */; };
 		1EEA4B6C2D8DC220005152DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6B2D8DC220005152DF /* Assets.xcassets */; };
@@ -22,7 +22,7 @@
 /* Begin PBXFileReference section */
 		1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCellView.swift; sourceTree = "<group>"; };
 		1E3B81082D9010CC003FABF5 /* MediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaController.swift; sourceTree = "<group>"; };
-		1E4A29B42D8F18C000253887 /* NavigationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarView.swift; sourceTree = "<group>"; };
+		1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AC3Buttons.swift; sourceTree = "<group>"; };
 		1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		1ED37F1C2EB18DA8003673C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1EEA4B662D8DC21E005152DF /* americo-media-converter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "americo-media-converter.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -63,7 +63,7 @@
 		1E1E25FD2D90969A005B5554 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				1E4A29B42D8F18C000253887 /* NavigationBarView.swift */,
+				1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */,
 				1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */,
 			);
 			path = Views;
@@ -223,7 +223,7 @@
 				DA9E4E4A2E990A3600CD961B /* PreferenceManager.swift in Sources */,
 				1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */,
 				1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */,
-				1E4A29B52D8F18C000253887 /* NavigationBarView.swift in Sources */,
+				1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
