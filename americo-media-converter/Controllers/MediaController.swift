@@ -417,7 +417,7 @@ class MediaController {
         // Parse pixel aspect ratio
         if let sar = parseSampleAspectRatio(stream.sampleAspectRatio) {
             // Use sar.numerator and sar.denominator safely
-            print("SAR: \(sar.numerator):\(sar.denominator)")
+            // print("SAR: \(sar.numerator):\(sar.denominator)")
             let hSpacing = Int(sar.numerator)
             let vSpacing = Int(sar.denominator)
             extensions[kCVImageBufferPixelAspectRatioKey as String] = [
@@ -574,6 +574,7 @@ class MediaController {
 
 extension String {
     func toDouble() -> Double? {
+        // print("Formatting Double")
         let numberFormatter = NumberFormatter()
         numberFormatter.locale = Locale(identifier: "en_US_POSIX")
         return numberFormatter.number(from: self)?.doubleValue

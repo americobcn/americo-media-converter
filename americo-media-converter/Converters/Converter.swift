@@ -10,9 +10,11 @@ class Converter {
     weak var delegate: ConverterDelegate?
     private var ffmpegURL: URL?
     private var runningProcesses: Set<Process> = []
+    private var duration: Double!
     
     init(delegate: ConverterDelegate) {
         self.delegate = delegate
+        self.duration = 0.1
         setup()
     }
     
@@ -28,26 +30,32 @@ class Converter {
     
     
     
-    func convert(fileURL: URL,
+    //func convert(fileURL: URL,
+    func convert(file: mediaFile,
                 args: String,
                 outPath: String,
                 completion: @escaping (Bool, String?, Int32) -> Void) {
         
         // Update UI with start message
         delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)
-        
+        // print("Duration: \(file.formatDescription["duration"]), type: \(type(of:file.formatDescription["duration"]))")
+        if let doubleValue = file.formatDescription["duration"] as? Double {
+            self.duration = doubleValue
+        }
+        // print(self.duration!)
         // Create process
         let process = Process()
         process.executableURL = ffmpegURL
         
         // Build arguments
         var arguments = ["-hide_banner", "-progress", "pipe:1",
-                         "-nostats", "-i", fileURL.path]
+                         "-nostats", "-i", file.mfURL.path]
         arguments.append(contentsOf: args.components(separatedBy: .whitespaces).filter { !$0.isEmpty })
         arguments.append(outPath)
         
         process.arguments = arguments
         print(arguments.joined(separator: " "))
+        
         
         // Setup pipes for output
         let outputPipe = Pipe()
@@ -70,7 +78,7 @@ class Converter {
                                let micro = Double(time[1].trimmingCharacters(in: .whitespacesAndNewlines)) {
                                let seconds = micro / 1_000_000
                                 DispatchQueue.main.async {
-                                    self?.delegate?.conversionProgress(seconds)
+                                    self?.delegate?.conversionProgress(min((seconds / self!.duration ) * 100, 100)) // min((seconds / self.duration ) * 100, 100)
                                }
                            }
                         }
@@ -95,10 +103,10 @@ class Converter {
             DispatchQueue.main.async {
                 switch status {
                 case 0:
-                    self?.delegate?.shouldUpdateOutView("\nSuccess converting \(fileURL.lastPathComponent).\n",
+                    self?.delegate?.shouldUpdateOutView("\nSuccess converting \(file.mfURL.lastPathComponent).\n",
                                                        Constants.MessageAttribute.succesMessageAttributes)
                 default:
-                    self?.delegate?.shouldUpdateOutView("\nError converting \(fileURL.lastPathComponent), failed with status code \(status).\n",
+                    self?.delegate?.shouldUpdateOutView("\nError converting \(file.mfURL.lastPathComponent), failed with status code \(status).\n",
                                                        Constants.MessageAttribute.errorMessageAttributes)
                 }
                 completion(status == 0, nil, status)
@@ -116,7 +124,7 @@ class Converter {
             
         } catch {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("\(fileURL.lastPathComponent): Failed to start conversion process: \(error.localizedDescription)\n",
+                self.delegate?.shouldUpdateOutView("\(file.mfURL.lastPathComponent): Failed to start conversion process: \(error.localizedDescription)\n",
                                                   Constants.MessageAttribute.errorMessageAttributes)
                 completion(false, error.localizedDescription, -1)
             }

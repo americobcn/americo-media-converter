@@ -2,7 +2,12 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , ConverterDelegate { 
+struct mediaFile {
+    var mfURL: URL
+    var formatDescription: [String: Any] = [:]
+}
+
+class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , ConverterDelegate {
     
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
@@ -37,10 +42,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
         
     // MARK: Media related variables
-    struct mediaFile {
-        var mfURL: URL
-        var formatDescription: [String: Any] = [:]
-    }
+    
     
     var files: [mediaFile] = []
     let mc = MediaController()
@@ -358,7 +360,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     func convertAudio() {
-        /// DEAL WITH FOLDERS DEFAULTS
+        // DEAL WITH FOLDERS DEFAULTS
         var destinationFolder: String?
         if prefs.defaultAudioDestination.isEmpty {
             destinationFolder = chooseFolderDestination()
@@ -403,7 +405,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         for file in files {
             let outPath = composeFileURL(of: file.mfURL, to: newAudioExtension, destinationFolder)
-            cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
+            cv.convert(file: file, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
@@ -510,10 +512,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
         newVideoExtension = videoContainerButton.title.lowercased() // Default extension
         for file in files {
-            print("MEDIA: \(file.formatDescription)")
+            // print("MEDIA: \(file.formatDescription)")
             videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: Constants.MessageAttribute.regularMessageAttributes))
             let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, destinationFolder)
-            cv.convert(fileURL: file.mfURL, args: arguments, outPath: outPath) {
+            cv.convert(file: file, args: arguments, outPath: outPath) {
                 success, message, exitCode in
                 if success {
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
