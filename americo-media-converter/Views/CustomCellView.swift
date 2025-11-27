@@ -39,6 +39,15 @@ final class CustomCellView: NSTableCellView {
         return imageView
     }()
 
+    let progressView: NSProgressIndicator = {
+        let progress = NSProgressIndicator()
+        progress.wantsLayer = true
+        progress.style = .spinning
+        progress.minValue = 0.0
+        progress.maxValue = 100.0
+        progress.isIndeterminate = false
+        return progress
+    }()
     
     // MARK: - Initialization
     override init(frame frameRect: NSRect) {

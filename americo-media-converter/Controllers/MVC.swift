@@ -866,8 +866,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     
-    func conversionProgress(_ seconds: Double) {
-        print("Progres: \(seconds)")
+    func conversionProgress(_ percent: Double) {
+        print("Progres: \(percent)")
         // guard totalDuration > 0 else { return }
         // let percentage = min((seconds / totalDuration) * 100, 100)
         // progressBar.doubleValue = percentage
