@@ -2,7 +2,7 @@ import Cocoa
 
 protocol ConverterDelegate: AnyObject {
     func shouldUpdateOutView(_ text: String, _ attributes: [NSAttributedString.Key: Any])
-    func conversionProgress(_ percent: Double)
+    func conversionProgress(forRow row: Int, _ percent: Double)
 }
 
 class Converter {
@@ -28,6 +28,7 @@ class Converter {
     func convert(file: mediaFile,
                 args: String,
                 outPath: String,
+                 row: Int,
                 completion: @escaping (Bool, String?, Int32) -> Void) {
         
         // Update UI with start message
@@ -53,7 +54,7 @@ class Converter {
         let fileHandle = outputPipe.fileHandleForReading
         
         fileHandle.readabilityHandler = { [weak self] handle in
-            self?.handleOutput(handle, duration, file: file)
+            self?.handleOutput(handle, duration, file: file, row: row)
         }
         
         process.terminationHandler = { [weak self] process in
@@ -81,11 +82,11 @@ class Converter {
         return arguments
     }
     
-    private func handleOutput(_ fileHandle: FileHandle,  _ duration: Double, file: mediaFile) {
+    private func handleOutput(_ fileHandle: FileHandle,  _ duration: Double, file: mediaFile, row: Int) {
         let data = fileHandle.availableData
         guard let output = String(data: data, encoding: .utf8) else { return }
         if output.contains("out_time_ms") {
-            processProgressOutput(output, duration ,file: file)
+            processProgressOutput(output, duration ,file: file, row: row)
         } else {
             DispatchQueue.main.async {
                 self.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
@@ -93,7 +94,7 @@ class Converter {
         }
     }
     
-    private func processProgressOutput(_ output: String, _ duration: Double, file: mediaFile) {
+    private func processProgressOutput(_ output: String, _ duration: Double, file: mediaFile, row: Int) {
         let components = output.split(separator: "\n").filter { $0.contains("out_time_ms") }
         for component in components {
             let timeComponents = component.split(separator: "=")
@@ -101,16 +102,16 @@ class Converter {
                let micro = Double(timeComponents[1].trimmingCharacters(in: .whitespacesAndNewlines)) {
                 let seconds = micro / 1_000_000
                 DispatchQueue.main.async { [weak self] in
-                    self?.updateProgress(seconds, duration ,file: file, output)
+                    self?.updateProgress(seconds, duration , file: file, output, row: row)
                 }
             }
         }
     }
     
-    private func updateProgress(_ seconds: Double, _ duration: Double, file: mediaFile, _ output: String) {
-        self.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
+    private func updateProgress(_ seconds: Double, _ duration: Double, file: mediaFile, _ output: String, row: Int) {
         let progress = round(min((seconds / duration) * 100, 100) * 100) / 100.0
-        delegate?.conversionProgress(progress)
+        delegate?.conversionProgress(forRow: row, progress)
+        delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
     }
     
     private func handleProcessTermination(_ process: Process, file: mediaFile, completion: @escaping (Bool, String?, Int32) -> Void) {

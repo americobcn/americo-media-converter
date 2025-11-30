@@ -403,9 +403,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         
                 
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
-        for file in files {
+        for (idx, file) in files.enumerated() {
             let outPath = composeFileURL(of: file.mfURL, to: newAudioExtension, destinationFolder)
-            cv.convert(file: file, args: arguments, outPath: outPath) {
+            cv.convert(file: file, args: arguments, outPath: outPath, row: idx) {
                 success, message, exitCode in
                 if success {
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
@@ -511,11 +511,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         }
         
         newVideoExtension = videoContainerButton.title.lowercased() // Default extension
-        for file in files {
+        for (idx, file) in files.enumerated() {
             // print("MEDIA: \(file.formatDescription)")
             videoOutTextView.textStorage?.append(NSAttributedString(string: "Converting \(file.mfURL)\n", attributes: Constants.MessageAttribute.regularMessageAttributes))
             let outPath = composeFileURL(of: file.mfURL, to: newVideoExtension, destinationFolder)
-            cv.convert(file: file, args: arguments, outPath: outPath) {
+            cv.convert(file: file, args: arguments, outPath: outPath, row: idx) {
                 success, message, exitCode in
                 if success {
                     self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
@@ -682,15 +682,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
         guard let colIdentifier = tableColumn?.identifier else { return nil }
         switch colIdentifier {
         case NSUserInterfaceItemIdentifier(rawValue: "fileColumn"):
-            guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "fileCell"), owner: self ) as? CustomCellView
+            guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "fileCell"), owner: nil ) as? CustomCellView
             else { return nil }
-            viewCell.fileNameLabel.stringValue = "\(files[row].mfURL.lastPathComponent) | \(formatSecondsTime(files[row].formatDescription["duration"] as! Double))"
+            viewCell.fileNameLabel.stringValue = "\(files[row].mfURL.lastPathComponent) | \(formatSecondsTime(files[row].formatDescription["duration"] as? Double ?? 0.0))"
             viewCell.fileInfoLabel.stringValue = getFormatDescription(row: row)
             if files[row].formatDescription.keys.contains("videoDesc") {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "video", accessibilityDescription: nil)
             } else {
                 viewCell.cellImageView.image = NSImage(systemSymbolName: "hifispeaker", accessibilityDescription: nil)
             }
+            viewCell.progressView.setupAsDeterminateBar()
+            
             return viewCell
             
         case NSUserInterfaceItemIdentifier(rawValue: "urlColumn"):
@@ -703,8 +705,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
             return nil
         }
     }
-    
-    
+            
     
     // MARK:  TableView Delegate Methods
     func tableViewSelectionDidChange(_ notification: Notification) {
@@ -866,12 +867,15 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource , Conver
     
     
     
-    func conversionProgress(_ percent: Double) {
+    func conversionProgress(forRow row: Int, _ percent: Double) {
         print("Progres: \(percent)")
-        // guard totalDuration > 0 else { return }
-        // let percentage = min((seconds / totalDuration) * 100, 100)
-        // progressBar.doubleValue = percentage
-        // progressLabel.stringValue = String(format: "%.1f%%", percentage)
+        guard let cell = filesTableView.view(
+                atColumn: 0,
+                row: row,
+                makeIfNecessary: false
+            ) as? CustomCellView else { return }
+            cell.progressView.isHidden = false
+        cell.progressView.setProgress(percent, animated: true)
     }
     
     

@@ -62,6 +62,9 @@ class PreferencesWindowController: NSWindowController {
     override func windowDidLoad() {
         super.windowDidLoad()
     }
+    
+    
+    
 }
 
 
@@ -227,6 +230,10 @@ class GeneralPreferencesViewController: NSViewController, NSTextFieldDelegate {
                 print("defaultAudioDestination changed to: \(currentValue)")
                 break
         }
+    }
+    
+    override func cancelOperation(_ sender: Any?) {
+        self.view.window?.close()
     }
 }
 
