@@ -341,10 +341,12 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
                 
         switch converterTabView.selectedTabViewItem?.label {
             case "Audio":
+                resetAllProgressBar()
                 conversionType = .audio
                 convertAudio()
-            break
+                break
             case "Video":
+                resetAllProgressBar()
                 conversionType = .video
                 convertVideo()
                 break
@@ -409,9 +411,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             cv.convert(file: file, args: arguments, outPath: outPath, row: idx) {
                 success, message, exitCode in
                 if success {
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
+                    //.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: //Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
+                    //.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: //Constants.MessageAttribute.errorMessageAttributes))
+                    self.progressBarError(idx)
                 }
             }
         }
@@ -519,9 +522,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             cv.convert(file: file, args: arguments, outPath: outPath, row: idx) {
                 success, message, exitCode in
                 if success {
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: Constants.MessageAttribute.succesMessageAttributes))
+                    //.videoOutTextView.textStorage?.append(NSAttributedString(string: "Succesfully converted \(file.mfURL)\n", attributes: //Constants.MessageAttribute.succesMessageAttributes))
                 } else {
-                    self.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: Constants.MessageAttribute.errorMessageAttributes))
+                    //.videoOutTextView.textStorage?.append(NSAttributedString(string: "Failed to convert \(file.mfURL)\n", attributes: //Constants.MessageAttribute.errorMessageAttributes))
+                    self.progressBarError(idx)
                 }
             }
         }
@@ -866,24 +870,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         }
     }
     
-    
-    func showProgressBar() {
+
+    func showProgressBar(_ row: Int) {
         let animation = CABasicAnimation(keyPath: "opacity")
         animation.fromValue = 0
         animation.toValue = 1
         animation.duration = 0.15
-        
-        let numberOfRows = filesTableView.numberOfRows
-        for row in 0..<numberOfRows {
-            // Access data for each row from your data source
-            guard let cell = filesTableView.view(
-                    atColumn: 0,
-                    row: row,
-                    makeIfNecessary: false
-                ) as? CustomCellView else { return }
-                cell.layer?.add(animation, forKey: "opacity")
-                cell.progressView.isHidden = false
-        }
+            
+        // Access data for each row from your data source
+        guard let cell = filesTableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? CustomCellView else { return }
+            cell.layer?.add(animation, forKey: "opacity")
+            cell.progressView.isHidden = false
     }
     
     
@@ -897,21 +894,44 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     }
     
     
+    func resetAllProgressBar() {
+        let numberOfRows = filesTableView.numberOfRows
+        for row in 0..<numberOfRows {
+            guard let cell = filesTableView.view(
+                atColumn: 0,
+                row: row,
+                makeIfNecessary: false
+            ) as? CustomCellView else { return }
+            cell.progressView.doubleValue = 0.0
+            let color = CIColor(red: 0.1, green: 0.9, blue: 0.1) // Green
+            let filter = CIFilter(name: "CIFalseColor", parameters: [
+                "inputColor0": color,
+                "inputColor1": color
+            ])!
+            cell.progressView.contentFilters = [filter]
+            cell.progressView.isHidden = true
+        }
+    }
+    
+    
+    func progressBarError(_ row: Int) {
+            guard let cell = filesTableView.view(
+                atColumn: 0,
+                row: row,
+                makeIfNecessary: false
+            ) as? CustomCellView else { return }
+            let color = CIColor(red: 0.9, green: 0.1, blue: 0.1) // Red
+            let filter = CIFilter(name: "CIFalseColor", parameters: [
+                "inputColor0": color,
+                "inputColor1": color
+            ])!
+        cell.progressView.contentFilters = [filter]
+    }
+    
+
     //MARK: NSTabView delegate methods
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
-        let numberOfRows = filesTableView.numberOfRows
-        if numberOfRows > 0 {
-            for row in 0..<numberOfRows {
-                guard let cell = filesTableView.view(
-                        atColumn: 0,
-                        row: row,
-                        makeIfNecessary: false
-                    ) as? CustomCellView else { return }
-                cell.progressView.isHidden = true
-                cell.progressView.doubleValue = 0.0
-                
-            }
-        }
+        resetAllProgressBar()
     }
     
     

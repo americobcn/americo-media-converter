@@ -62,14 +62,14 @@ struct Constants {
     }
     
     
-    static func checkBinary(binary: String) -> URL {
+    static func checkBinary(binary: String) -> URL? {
         // First, try to find the binary in the app bundle
         if let url = Bundle.main.url(forResource: binary, withExtension: nil) {
             self.HasLibfdkAAC = ffmpegHasLibfdkAAC(ffmpegURL: url)
             self.hasLibx264 = ffmpegHasLibx264(ffmpegURL: url)
             return url
         }
-        
+        print("Binary bundle not found, searching for system paths")
         // If not found in bundle, search system paths
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/which")
@@ -87,6 +87,7 @@ struct Constants {
                !path.isEmpty {
                 let url = URL(fileURLWithPath: path)
                 self.HasLibfdkAAC = ffmpegHasLibfdkAAC(ffmpegURL: url)
+                print("Found \(binary) at \(url.path)")
                 return url
             }
         } catch {
@@ -95,7 +96,8 @@ struct Constants {
         }
         
         // NOT VALID RETURN; JUST TO TEST
-        return URL(fileReferenceLiteralResourceName: "")
+        return nil
+        
     }
     
 

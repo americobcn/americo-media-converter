@@ -297,33 +297,4 @@ extension AC3ProgressIndicator {
         self.contentFilters = [filter]
     }
 
-    /// Convenience method to animate through a series of steps
-    //func animateSteps(_ steps: [Double], stepDuration: TimeInterval? = nil, completion: (() -> Void)? = nil) {
-    //    guard !steps.isEmpty else {
-    //        completion?()
-    //        return
-    //    }
-
-    //    if let duration = stepDuration {
-    //        self.stepAnimationDuration = duration
-    //    }
-
-    //    var currentIndex = 0
-
-    //    func animateNextStep() {
-    //        guard currentIndex < steps.count else {
-    //            completion?()
-    //            return
-    //        }
-
-    //        setProgress(steps[currentIndex], animated: true)
-    //        currentIndex += 1
-
-    //        DispatchQueue.main.asyncAfter(deadline: .now() + stepAnimationDuration) {
-    //            animateNextStep()
-    //        }
-    //    }
-
-    //    animateNextStep()
-    //}
 }
