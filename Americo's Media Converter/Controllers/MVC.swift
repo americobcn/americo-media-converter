@@ -7,6 +7,13 @@ struct mediaFile {
     var formatDescription: [String: Any] = [:]
 }
 
+private struct UserInterfaceIdentifiers {
+    static let fileColumnIdentifier = NSUserInterfaceItemIdentifier("fileColumn")
+    static let urlColumnIdentifier = NSUserInterfaceItemIdentifier(rawValue: "urlColumn")
+    static let fileCellIdentifier = NSUserInterfaceItemIdentifier("fileCell")
+}
+
+
 class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabViewDelegate, ConverterDelegate {
     
     // MARK: Views Outlets
@@ -682,12 +689,12 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         return files.count
     }
     
-    
+    // NSUserInterfaceItemIdentifier(rawValue: "fileCell")
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let colIdentifier = tableColumn?.identifier else { return nil }
         switch colIdentifier {
-        case NSUserInterfaceItemIdentifier(rawValue: "fileColumn"):
-            guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "fileCell"), owner: nil ) as? CustomCellView
+        case UserInterfaceIdentifiers.fileColumnIdentifier:
+            guard let viewCell = tableView.makeView(withIdentifier: UserInterfaceIdentifiers.fileCellIdentifier, owner: nil ) as? CustomCellView
             else { return nil }
             viewCell.fileNameLabel.stringValue = "\(files[row].mfURL.lastPathComponent) | \(formatSecondsTime(files[row].formatDescription["duration"] as? Double ?? 0.0))"
             viewCell.fileInfoLabel.stringValue = getFormatDescription(row: row)
@@ -700,8 +707,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             
             return viewCell
             
-        case NSUserInterfaceItemIdentifier(rawValue: "urlColumn"):
-            guard let viewCell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "urlCell"), owner: self ) as? NSTableCellView
+        case UserInterfaceIdentifiers.urlColumnIdentifier:
+            guard let viewCell = tableView.makeView(withIdentifier: UserInterfaceIdentifiers.urlColumnIdentifier, owner: self ) as? NSTableCellView
             else { return nil }
             viewCell.textField?.stringValue = files[row].mfURL.path
             return viewCell
@@ -765,15 +772,17 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
                 return false
             }
             
-            guard sourceRow != row else {
-                return false
-            } // Prevent dropping onto the same row
+            guard sourceRow < files.count else { return false }            
+            // Prevent dropping onto the same row
+            guard sourceRow != row else { return false }
             
             let draggedItem = files[sourceRow]
-            files.remove(at: sourceRow)
             
             // Adjust the destination index when dragging downwards
             let adjustedIndex = row > sourceRow ? row - 1 : row
+            
+            files.remove(at: sourceRow)
+                        
             files.insert(draggedItem, at: adjustedIndex)
             tableView.moveRow(at: sourceRow, to: adjustedIndex)
             return true
@@ -782,23 +791,23 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         } else if info.draggingPasteboard.types?.contains(.fileURL) == true {
             // print("DROPPED")
             guard let pasteboardObjects = info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil),
-                  pasteboardObjects.count > 0 else {
+                  pasteboardObjects.count > 0  else {
                 return false
             }
             pasteboardObjects.forEach { (object) in
                 if let url = object as? NSURL {
                     let mfInfo = mc.isAVMediaType(url: url as URL)
                     if mfInfo.0 == true {
-                        let mfFile: mediaFile! = mediaFile(
-                            mfURL: URL(fileURLWithPath: url.path!),
-                            formatDescription: mfInfo.1
-                        )
+                        //let mfFile: mediaFile! = mediaFile(mfURL: URL(fileURLWithPath: url.path!), formatDescription: mfInfo.1)
+                        guard let path = url.path else { return }
+                        let mfFile = mediaFile(mfURL: URL(fileURLWithPath: path), formatDescription: mfInfo.1)
                         files.append(mfFile)
                     }
                 }
             }
             
             tableView.reloadData()
+            cancelConversionButton.isEnabled = true
             startConversionButton.isEnabled = true
             return true
         }
@@ -829,7 +838,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     
     private func playPause() {
-        if playerView.player?.rate == 0.0  {
+        guard let rate = playerView.player?.rate else { return }
+        if rate == 0.0  {
             playerView.player?.play()
         } else {
             playerView.player?.pause()
@@ -850,6 +860,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         }
     
         filesTableView.removeRows(at: selectedIndexes, withAnimation: .effectFade)
+        playerView.player?.rate = 0.0
         playerView.player?.replaceCurrentItem(with: nil)
     }
     

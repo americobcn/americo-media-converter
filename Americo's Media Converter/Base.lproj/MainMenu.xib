@@ -225,7 +225,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                             <clipView key="contentView" drawsBackground="NO" id="q0E-qj-rwU">
                                                 <rect key="frame" x="0.0" y="0.0" width="845" height="360"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <autoresizingMask key="autoresizingMask"/>
                                                 <subviews>
                                                     <textView wantsLayer="YES" importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="2Dw-25-1Ya">
                                                         <rect key="frame" x="0.0" y="0.0" width="845" height="360"/>
