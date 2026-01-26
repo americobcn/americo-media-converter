@@ -77,8 +77,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     var conversionType: Constants.ConversionType!
     let prefs = PreferencesManager.shared
     
-    // MARK: PopUp Button titles
     
+    // MARK: PopUp Button titles
     enum VideoResolution: CaseIterable, Identifiable {
             case sd480, sd576
             case hd720, hd1080
@@ -250,9 +250,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     enum AudioSampleRate: String, CaseIterable, Identifiable {
         case f96khz, f48khz, f44khz
-        
         var id: Self { return self }
-        
         var frequency: String {
             switch self {
             case .f96khz: return "96000"
@@ -383,7 +381,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     
     //MARK: IBAction Methods
-    
     @IBAction func startConversion(_ sender: NSButton) {
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
@@ -781,14 +778,12 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     
     
-    func tableView(_ tableView: NSTableView,
-                   pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting?
     {
         return files[row].mfURL as NSURL
     }
     
-    
-    
+        
     func tableView(_ tableView: NSTableView,
                    validateDrop info: NSDraggingInfo,
                    proposedRow row: Int,
