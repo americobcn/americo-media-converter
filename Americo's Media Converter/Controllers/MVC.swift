@@ -2,7 +2,7 @@ import Cocoa
 import AVFoundation
 import AVKit
 
-struct mediaFile {
+struct mediaFile: @unchecked Sendable {
     var mfURL: URL
     var formatDescription: [String: Any] = [:]
 }
@@ -54,6 +54,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     var files: [mediaFile] = []
     let mc = MediaController()
     var movieDepth: CFPropertyList?
+    
+    // MARK: Loading Status UI
+    private var loadingStatusLabel: NSTextField?
+    private var loadingIndicator: NSProgressIndicator?
+    private var loadingContainerView: NSView?
     
     private(set) var selectedVideoCodec: VideoCodecs = .ProRes
     private(set) var selectedVideoCodecProfile: VideoProfiles = .ProRes
@@ -330,6 +335,50 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         filesTableView.registerForDraggedTypes([.fileURL])
         filesTableView.allowsMultipleSelection = true
         filesTableView.rowHeight = 60
+    }
+    
+    
+    // MARK: - Loading Status
+    
+    private func showLoadingStatus(fileCount: Int) {
+        let containerView = NSView(frame: filesTableView.bounds)
+        containerView.wantsLayer = true
+        containerView.layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.9).cgColor
+        
+        let label = NSTextField(labelWithString: "Processing \(fileCount) file\(fileCount == 1 ? "" : "s")...")
+        label.font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        label.textColor = .secondaryLabelColor
+        label.alignment = .center
+        label.frame = NSRect(x: 0, y: containerView.bounds.midY + 10, width: containerView.bounds.width, height: 24)
+        label.autoresizingMask = [.width, .minYMargin, .maxYMargin]
+        
+        let indicator = NSProgressIndicator(frame: NSRect(
+            x: containerView.bounds.midX - 16,
+            y: containerView.bounds.midY - 26,
+            width: 32,
+            height: 32
+        ))
+        indicator.style = .spinning
+        indicator.controlSize = .regular
+        indicator.isIndeterminate = true
+        indicator.startAnimation(nil)
+        indicator.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin, .maxYMargin]
+        
+        containerView.addSubview(label)
+        containerView.addSubview(indicator)
+        filesTableView.superview?.addSubview(containerView)
+        
+        loadingContainerView = containerView
+        loadingStatusLabel = label
+        loadingIndicator = indicator
+    }
+    
+    private func hideLoadingStatus() {
+        loadingIndicator?.stopAnimation(nil)
+        loadingContainerView?.removeFromSuperview()
+        loadingContainerView = nil
+        loadingStatusLabel = nil
+        loadingIndicator = nil
     }
     
     
@@ -789,26 +838,46 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             
         // Dragged files from finder
         } else if info.draggingPasteboard.types?.contains(.fileURL) == true {
-            // print("DROPPED")
             guard let pasteboardObjects = info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil),
-                  pasteboardObjects.count > 0  else {
+                  !pasteboardObjects.isEmpty else {
                 return false
             }
-            pasteboardObjects.forEach { (object) in
-                if let url = object as? NSURL {
-                    let mfInfo = mc.isAVMediaType(url: url as URL)
-                    if mfInfo.0 == true {
-                        //let mfFile: mediaFile! = mediaFile(mfURL: URL(fileURLWithPath: url.path!), formatDescription: mfInfo.1)
-                        guard let path = url.path else { return }
-                        let mfFile = mediaFile(mfURL: URL(fileURLWithPath: path), formatDescription: mfInfo.1)
-                        files.append(mfFile)
+            
+            let fileCount = pasteboardObjects.count
+            showLoadingStatus(fileCount: fileCount)
+            
+            Task { [weak self] in
+                guard let self = self else { return }
+                
+                var newFiles: [mediaFile] = []
+                
+                await withTaskGroup(of: mediaFile?.self) { group in
+                    for object in pasteboardObjects {
+                        guard let url = object as? NSURL,
+                              let path = url.path else { continue }
+                        
+                        group.addTask { [weak self] in
+                            guard let self = self else { return nil }
+                            let mfInfo = await self.mc.isAVMediaType(url: URL(fileURLWithPath: path))
+                            guard mfInfo.isPlayable else { return nil }
+                            return mediaFile(mfURL: URL(fileURLWithPath: path), formatDescription: mfInfo.formats)
+                        }
+                    }
+                    
+                    for await result in group {
+                        if let file = result {
+                            newFiles.append(file)
+                        }
                     }
                 }
+                
+                self.files.append(contentsOf: newFiles)
+                self.hideLoadingStatus()
+                self.filesTableView.reloadData()
+                self.cancelConversionButton.isEnabled = !self.files.isEmpty
+                self.startConversionButton.isEnabled = !self.files.isEmpty
             }
             
-            tableView.reloadData()
-            cancelConversionButton.isEnabled = true
-            startConversionButton.isEnabled = true
             return true
         }
         

@@ -29,7 +29,7 @@ class Converter {
                 args: String,
                 outPath: String,
                  row: Int,
-                completion: @escaping (Bool, String?, Int32) -> Void) {
+                completion: @escaping (Bool, String?, Int32) -> Void) { 
         
         // Update UI with start message
         delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)

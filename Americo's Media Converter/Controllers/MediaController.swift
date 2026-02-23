@@ -1,24 +1,21 @@
+import Cocoa
 import Foundation
 import CoreMedia
 import AVFoundation
 
 
-class MediaController {
-    var urlAsset: AVURLAsset!
-    var videoFormatDesc: CMFormatDescription!
-    var audioFormatDesc: CMFormatDescription!
-    var ffprobeURL: URL!
-    var format: [String:Any] = [:]
+actor MediaController {
+    private let ffprobeURL: URL?
     
     
 // MARK: - FFprobe JSON Models
     
-    struct FFprobeOutput: Codable {
+    struct FFprobeOutput: Codable, Sendable {
         let streams: [FFprobeStream]
         let format: FFprobeFormat
     }
 
-    struct FFprobeStream: Codable {
+    struct FFprobeStream: Codable, Sendable {
         let index: Int
         let codecType: String
         let codecName: String
@@ -91,7 +88,7 @@ class MediaController {
         }
     }
 
-    struct FFprobeFormat: Codable {
+    struct FFprobeFormat: Codable, Sendable {
         let filename: String
         let nbStreams: Int
         let formatName: String
@@ -111,7 +108,7 @@ class MediaController {
         }
     }
 
-    enum FormatDescriptionError: Error {
+    enum FormatDescriptionError: Error, Sendable {
         case unsupportedCodec(String)
         case missingRequiredField(String)
         case invalidData
@@ -120,7 +117,6 @@ class MediaController {
 
     
     init() {
-        self.ffprobeURL = nil
         self.ffprobeURL = Constants.checkBinary(binary: "ffprobe")
         if self.ffprobeURL == nil {
             Constants.dropAlert(message: "ffprobe is missing", informative: "Some info will not be available until you install ffprobe binary in Resources folder of the app.\nIf ffprobe is located in /usr/local/bin/ffprobe, copy the binary in the Resources folder of the app.")
@@ -130,50 +126,55 @@ class MediaController {
     
     
 //MARK: Check if file is a valid media file and return file metadata
-    func isAVMediaType(url: URL) -> (isPlayable: Bool, formats: [String: Any]) {
+    func isAVMediaType(url: URL) async -> (isPlayable: Bool, formats: [String: Any]) {
         let urlAsset = AVURLAsset(url: url)
-        if urlAsset.isPlayable {
-            format = getMetadata(asset: urlAsset)
-            format["duration"] = CMTimeGetSeconds(urlAsset.duration)            
-            return (isPlayable: true, formats: format)
+        do {
+            if try await urlAsset.load(.isPlayable) {
+                var assetFormat = await getMetadata(asset: urlAsset)
+                let duration = try await urlAsset.load(.duration)
+                assetFormat["duration"] = CMTimeGetSeconds(duration)
+                return (isPlayable: true, formats: assetFormat)
+            }
+        } catch {
+            print("Error loading AVURLAsset: \(error.localizedDescription)")
         }
         
         if isValidFFmpegCandidate(url) {
             do {
-                let jsonData = try getFFprobeJSON(for: url)
+                let jsonData = try await getFFprobeJSON(for: url)
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
-                    var format: [String:Any] = [:]
+                    var ffprobeFormat: [String:Any] = [:]
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
                             case kCMMediaType_Video:
-                            format["videoDesc"] = desc
-                            format["rate"] = getFrameRate(jsonData)
+                            ffprobeFormat["videoDesc"] = desc
+                            ffprobeFormat["rate"] = getFrameRate(jsonData)
                             do {
-                                format["duration"] = try getDuration(for: url)
+                                ffprobeFormat["duration"] = try await getDuration(for: url)
                             } catch {
-                                format["duration"] = 0.0
+                                ffprobeFormat["duration"] = 0.0
                             }
                             
-                            format["icon"] = "video"
+                            ffprobeFormat["icon"] = "video"
                             break
                                 
                             case kCMMediaType_Audio:
-                            format["audioDesc"] = desc
-                            format["icon"] = "hifispeaker"
+                            ffprobeFormat["audioDesc"] = desc
+                            ffprobeFormat["icon"] = "hifispeaker"
                             break
                                 
                             case kCMMediaType_TimeCode:
-                                format["tcDesc"] = desc
-                                break
+                            ffprobeFormat["tcDesc"] = desc
+                            break
                             
                             default:
-                                return (isPlayable: false, formats: [:])
+                            return (isPlayable: false, formats: [:])
                             
                         }
                     }
                     
-                    return (isPlayable: true, formats: format)
+                    return (isPlayable: true, formats: ffprobeFormat)
                     
                 } catch {
                     return (isPlayable: false, formats: [:])
@@ -189,132 +190,116 @@ class MediaController {
     
     
     
-    func getFrameRate(_ data: Data) -> Float {
+    nonisolated func getFrameRate(_ data: Data) -> Float {
         let decoder = JSONDecoder()
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: data)
-            let formula = ffprobeOutput.streams[0].rFrameRate
-            let nums = formula!.split(separator: "/")
-            let num1 = Float(nums[0])!
-            let num2 = Float(nums[1])!
+            guard let formula = ffprobeOutput.streams.first?.rFrameRate else {
+                return 0.0
+            }
+            let nums = formula.split(separator: "/")
+            guard nums.count == 2,
+                  let num1 = Float(nums[0]),
+                  let num2 = Float(nums[1]),
+                  num2 != 0 else {
+                return 0.0
+            }
             return num1 / num2
             
         } catch {
-            print("ERROR")
+            print("Error decoding frame rate: \(error)")
             return 0.0
         }
     }
     
     
-    func getDuration(for url: URL) throws -> Double {
-        let process = Process()
-        process.executableURL = ffprobeURL
-        // ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 input.mp4
-        process.arguments = [ "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", url.path ]
+    func getDuration(for url: URL) async throws -> Double {
+        guard let ffprobeURL = ffprobeURL else {
+            throw FormatDescriptionError.missingRequiredField("ffprobeURL")
+        }
         
-        let pipe = Pipe()
-        process.standardOutput = pipe
+        let data = try await runProcess(
+            executableURL: ffprobeURL,
+            arguments: ["-v", "error", "-show_entries", "format=duration", 
+                       "-of", "default=noprint_wrappers=1:nokey=1", url.path]
+        )
         
-        try process.run()
-        process.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         if let secondsStr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-            return  secondsStr.toDouble() ?? 0.01 //Double(secondsStr.trimmingCharacters(in: .whitespacesAndNewlines))!
+            return secondsStr.toDouble() ?? 0.01
         }
         return 0.01
     }
 
-    
 
-    func getMetadata(asset: AVURLAsset ) -> [String: Any] {
+
+    func getMetadata(asset: AVURLAsset) async -> [String: Any] {
         var videoFormatDesc: CMVideoFormatDescription?
         var audioFormatDesc: CMAudioFormatDescription?
         var timeFromatDesc: CMTimeCodeFormatDescription?
         
-        var format: [String:Any] = [:]        
-        for track in asset.tracks {
-            switch track.mediaType {
-            case .video:
-                videoFormatDesc = ((track.formatDescriptions[0] ) as! CMVideoFormatDescription)
-                format["videoDesc"] = videoFormatDesc
-                format["rate"] = track.nominalFrameRate
-                format["icon"] = "video"
-                break
-                
-            case .audio:
-                audioFormatDesc = ((track.formatDescriptions[0] ) as! CMAudioFormatDescription)
-                format["audioDesc"] = audioFormatDesc
-                format["icon"] = "hifispeaker"
-                break
-                
-            case .timecode:
-                timeFromatDesc = ((track.formatDescriptions[0]) as! CMTimeCodeFormatDescription)
-                format["tcDesc"] = timeFromatDesc
-            default:
-                break
+        var metadataFormat: [String:Any] = [:]
+        do {
+            for track in try await asset.load(.tracks) {
+                switch track.mediaType {
+                case .video:
+                    videoFormatDesc = try await track.load(.formatDescriptions).first
+                    metadataFormat["videoDesc"] = videoFormatDesc
+                    metadataFormat["rate"] = try await track.load(.nominalFrameRate)
+                    metadataFormat["icon"] = "video"
+                    break
+                    
+                case .audio:
+                    audioFormatDesc = try await track.load(.formatDescriptions).first
+                    metadataFormat["audioDesc"] = audioFormatDesc
+                    metadataFormat["icon"] = "hifispeaker"
+                    break
+                    
+                case .timecode:
+                    timeFromatDesc = try await track.load(.formatDescriptions).first
+                    metadataFormat["tcDesc"] = timeFromatDesc
+                    break
+                default:
+                    break
+                }
             }
+        } catch {
+            print("Error: \(error)")
         }
-        return  format
+        return metadataFormat
     }
     
     
-    func getFFprobeJSON(for url: URL) throws -> Data {
-        let process = Process()
-        process.executableURL = ffprobeURL
-        process.arguments = [
-            "-v", "quiet",
-            "-show_format",
-            "-show_streams",
-            "-print_format", "json",
-            url.path
-        ]
+    func getFFprobeJSON(for url: URL) async throws -> Data {
+        guard let ffprobeURL = ffprobeURL else {
+            throw FormatDescriptionError.missingRequiredField("ffprobeURL")
+        }
         
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        
-        try process.run()
-        process.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return data
+        return try await runProcess(
+            executableURL: ffprobeURL,
+            arguments: ["-v", "quiet", "-show_format", "-show_streams", 
+                       "-print_format", "json", url.path]
+        )
     }
     
     
-    // NEV
-    func checkFFprobeFile(for url: URL) throws -> Int32 {
-        let process = Process()
-        process.executableURL = ffprobeURL
-        process.arguments = [
-            "-ss",
-            "00:29:59",
-            "-i",
-            url.path,
-            "-f",
-            "null",
-            "-"
-        ]
+    func checkFFprobeFile(for url: URL) async throws -> Int32 {
+        guard let ffprobeURL = ffprobeURL else {
+            throw FormatDescriptionError.missingRequiredField("ffprobeURL")
+        }
         
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        
-        try process.run()
-        
-        // process.waitUntilExit()
-            
-        return process.terminationStatus
+        return try await runProcessWithExitCode(
+            executableURL: ffprobeURL,
+            arguments: ["-ss", "00:29:59", "-i", url.path, "-f", "null", "-"]
+        )
     }
     
     
-    
-    func isValidFFmpegCandidate(_ fileURL: URL, checkFileExists: Bool = true) -> Bool {
-        // Optional file existence check
+    nonisolated func isValidFFmpegCandidate(_ fileURL: URL, checkFileExists: Bool = true) -> Bool {
         if checkFileExists && fileURL.isFileURL {
             guard FileManager.default.fileExists(atPath: fileURL.path) else {
                 return false
             }
             
-            // Check if it's actually a file (not a directory)
             var isDirectory: ObjCBool = false
             FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory)
             guard !isDirectory.boolValue else {
@@ -335,10 +320,9 @@ class MediaController {
 
     
     
-    
 // MARK: - Format Descriptions
     
-    func createFormatDescriptions(from jsonData: Data) throws -> [CMFormatDescription] {
+    nonisolated func createFormatDescriptions(from jsonData: Data) throws -> [CMFormatDescription] {
         let decoder = JSONDecoder()
         let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: jsonData)
         
@@ -355,7 +339,7 @@ class MediaController {
 
     
     
-    func createFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
+    nonisolated func createFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         switch stream.codecType {
         case "video":
             return try createVideoFormatDescription(from: stream)
@@ -371,7 +355,7 @@ class MediaController {
     
 // MARK: - Video Format Description
 
-    func createVideoFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
+    nonisolated func createVideoFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         guard let width = stream.width, let height = stream.height else {
             throw FormatDescriptionError.missingRequiredField("width or height")
         }
@@ -403,7 +387,6 @@ class MediaController {
             extensions["FormatName"] = formatName
         }
             
-        // Add color information if available
         if let colorPrimaries = stream.colorPrimaries {
             extensions[kCVImageBufferColorPrimariesKey as String] = colorPrimaries
         }
@@ -414,10 +397,7 @@ class MediaController {
             extensions[kCVImageBufferYCbCrMatrixKey as String] = colorSpace
         }
         
-        // Parse pixel aspect ratio
         if let sar = parseSampleAspectRatio(stream.sampleAspectRatio) {
-            // Use sar.numerator and sar.denominator safely
-            // print("SAR: \(sar.numerator):\(sar.denominator)")
             let hSpacing = Int(sar.numerator)
             let vSpacing = Int(sar.denominator)
             extensions[kCVImageBufferPixelAspectRatioKey as String] = [
@@ -449,7 +429,7 @@ class MediaController {
     
 // MARK: - Audio Format Description
 
-    func createAudioFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
+    nonisolated func createAudioFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         guard let sampleRateString = stream.sampleRate,
               let sampleRate = Double(sampleRateString) else {
             throw FormatDescriptionError.missingRequiredField("sample_rate")
@@ -465,7 +445,6 @@ class MediaController {
         asbd.mSampleRate = sampleRate
         asbd.mChannelsPerFrame = channels
         
-        // Set additional properties based on codec
         switch stream.codecName {
         case "pcm_s16le", "pcm_s16be":
             asbd.mFormatID = "lpcm".toFourCharCode()!
@@ -495,7 +474,6 @@ class MediaController {
             asbd.mFramesPerPacket = 1024
             break
         default:
-            // Generic compressed format
             asbd.mFormatID = codecType
             asbd.mFramesPerPacket = 0
         }
@@ -523,8 +501,7 @@ class MediaController {
     
 // MARK: - Helper Functions
 
-    func fourCharCode(from codecName: String) -> CMVideoCodecType? {
-        // Map common FFmpeg codec names to FourCC codes
+    nonisolated func fourCharCode(from codecName: String) -> CMVideoCodecType? {
         switch codecName.lowercased() {
             case "h264", "avc1", "h264_mp4", "h264_nal":
                 return kCMVideoCodecType_H264
@@ -543,7 +520,6 @@ class MediaController {
             case "prores":
                 return kCMVideoCodecType_AppleProRes422
             default:
-                // Try to convert string to FourCC
             let chars = Array(codecName.prefix(4).padding(toLength: 4, withPad: " ", startingAt: 0))
             return FourCharCode(chars[0].asciiValue ?? 0) << 24 |
                 FourCharCode(chars[1].asciiValue ?? 0) << 16 |
@@ -553,7 +529,7 @@ class MediaController {
     }
     
     
-    private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {        
+    nonisolated private func parseSampleAspectRatio(_ aspectRatioString: String?) -> (numerator: Int, denominator: Int)? {        
         guard let sarString = aspectRatioString,
               !sarString.isEmpty,
               sarString != "0:1" else {
@@ -569,12 +545,48 @@ class MediaController {
         
         return (numerator: components[0], denominator: components[1])
     }
+    
+    
+// MARK: - Async Process Helpers
+    
+    private func runProcess(executableURL: URL, arguments: [String]) async throws -> Data {
+        try await Task.detached {
+            let process = Process()
+            process.executableURL = executableURL
+            process.arguments = arguments
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = pipe
+            
+            try process.run()
+            process.waitUntilExit()
+            
+            return pipe.fileHandleForReading.readDataToEndOfFile()
+        }.value
+    }
+    
+    private func runProcessWithExitCode(executableURL: URL, arguments: [String]) async throws -> Int32 {
+        try await Task.detached {
+            let process = Process()
+            process.executableURL = executableURL
+            process.arguments = arguments
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = pipe
+            
+            try process.run()
+            process.waitUntilExit()
+            
+            return process.terminationStatus
+        }.value
+    }
 }
 
 
 extension String {
     func toDouble() -> Double? {
-        // print("Formatting Double")
         let numberFormatter = NumberFormatter()
         numberFormatter.locale = Locale(identifier: "en_US_POSIX")
         return numberFormatter.number(from: self)?.doubleValue
