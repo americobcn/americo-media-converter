@@ -144,10 +144,8 @@ actor MediaController {
         if isValidFFmpegCandidate(url) {
             do {
                 let jsonData = try await getFFprobeJSON(for: url)
-                print("JSON Data: \(jsonData)")
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
-                    print("formatDescriptions: \(formatDescriptions.description)")
                     var ffprobeFormat: [String:Any] = [:]
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
@@ -323,21 +321,15 @@ actor MediaController {
     }
     
 
-
-    
     
 // MARK: - Format Descriptions
     
     nonisolated func createFormatDescriptions(from jsonData: Data) throws -> [CMFormatDescription] {
-        print("createFormatDescriptions called")
         let decoder = JSONDecoder()
-        print("JSONDecoder: \(decoder)")
         var formatDescriptions: [CMFormatDescription] = []
         do {
             let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: jsonData)
-            print("ffprobeOutput: \(ffprobeOutput)")
             for stream in ffprobeOutput.streams {
-                print("stream: \(stream)")
                 if let formatDesc = try? createFormatDescription(from: stream) {
                     formatDescriptions.append(formatDesc)
                 }
@@ -374,7 +366,6 @@ actor MediaController {
         guard let codecType = fourCharCode(from: stream.codecName!) else {
             throw FormatDescriptionError.creationFailed
         }
-
         
         var formatDescription: CMFormatDescription?
         
