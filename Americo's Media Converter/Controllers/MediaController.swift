@@ -18,7 +18,7 @@ actor MediaController {
     struct FFprobeStream: Codable, Sendable {
         let index: Int
         let codecType: String
-        let codecName: String
+        let codecName: String?
         let codecLongName: String?
         let profile: String?
         let codecTagString: String
@@ -128,8 +128,10 @@ actor MediaController {
 //MARK: Check if file is a valid media file and return file metadata
     func isAVMediaType(url: URL) async -> (isPlayable: Bool, formats: [String: Any]) {
         let urlAsset = AVURLAsset(url: url)
+        
         do {
             if try await urlAsset.load(.isPlayable) {
+                print("\(urlAsset.url) is playable")
                 var assetFormat = await getMetadata(asset: urlAsset)
                 let duration = try await urlAsset.load(.duration)
                 assetFormat["duration"] = CMTimeGetSeconds(duration)
@@ -138,12 +140,14 @@ actor MediaController {
         } catch {
             print("Error loading AVURLAsset: \(error.localizedDescription)")
         }
-        
+        print("\(urlAsset.url) is not playable. Checking isValidFFmpegCandidate")
         if isValidFFmpegCandidate(url) {
             do {
                 let jsonData = try await getFFprobeJSON(for: url)
+                print("JSON Data: \(jsonData)")
                 do {
                     let formatDescriptions = try createFormatDescriptions(from: jsonData)
+                    print("formatDescriptions: \(formatDescriptions.description)")
                     var ffprobeFormat: [String:Any] = [:]
                     for desc in formatDescriptions {
                         switch CMFormatDescriptionGetMediaType(desc) {
@@ -177,14 +181,15 @@ actor MediaController {
                     return (isPlayable: true, formats: ffprobeFormat)
                     
                 } catch {
+                    print("Error 1: \(error)")
                     return (isPlayable: false, formats: [:])
                 }
                 
             } catch {
+                print("Error 2: \(error)")
                 return (isPlayable: false, formats: [:])
             }
         }
-        
         return (isPlayable: false, formats: [:])
     }
     
@@ -270,6 +275,7 @@ actor MediaController {
     
     
     func getFFprobeJSON(for url: URL) async throws -> Data {
+        print("getFFprobeJSON: \(url)")
         guard let ffprobeURL = ffprobeURL else {
             throw FormatDescriptionError.missingRequiredField("ffprobeURL")
         }
@@ -323,22 +329,27 @@ actor MediaController {
 // MARK: - Format Descriptions
     
     nonisolated func createFormatDescriptions(from jsonData: Data) throws -> [CMFormatDescription] {
+        print("createFormatDescriptions called")
         let decoder = JSONDecoder()
-        let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: jsonData)
-        
+        print("JSONDecoder: \(decoder)")
         var formatDescriptions: [CMFormatDescription] = []
-        
-        for stream in ffprobeOutput.streams {
-            if let formatDesc = try? createFormatDescription(from: stream) {
-                formatDescriptions.append(formatDesc)
+        do {
+            let ffprobeOutput = try decoder.decode(FFprobeOutput.self, from: jsonData)
+            print("ffprobeOutput: \(ffprobeOutput)")
+            for stream in ffprobeOutput.streams {
+                print("stream: \(stream)")
+                if let formatDesc = try? createFormatDescription(from: stream) {
+                    formatDescriptions.append(formatDesc)
+                }
             }
+            return formatDescriptions
+        } catch {
+            print("Error in createFormatDescriptions: \(error)")
         }
-        
         return formatDescriptions
     }
 
-    
-    
+        
     nonisolated func createFormatDescription(from stream: FFprobeStream) throws -> CMFormatDescription {
         switch stream.codecType {
         case "video":
@@ -360,7 +371,7 @@ actor MediaController {
             throw FormatDescriptionError.missingRequiredField("width or height")
         }
         
-        guard let codecType = fourCharCode(from: stream.codecName) else {
+        guard let codecType = fourCharCode(from: stream.codecName!) else {
             throw FormatDescriptionError.creationFailed
         }
 
@@ -436,7 +447,7 @@ actor MediaController {
         }
         
         let channels = UInt32(stream.channels ?? 2)
-        guard let codecType = fourCharCode(from: stream.codecName) else {
+        guard let codecType = fourCharCode(from: stream.codecName!) else {
             throw FormatDescriptionError.creationFailed
         }
 
@@ -563,7 +574,8 @@ actor MediaController {
             process.waitUntilExit()
             
             return pipe.fileHandleForReading.readDataToEndOfFile()
-        }.value
+        }
+        .value
     }
     
     private func runProcessWithExitCode(executableURL: URL, arguments: [String]) async throws -> Int32 {
