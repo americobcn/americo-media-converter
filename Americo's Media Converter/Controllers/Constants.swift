@@ -30,6 +30,7 @@ struct Constants {
     enum ConversionType {
         case audio
         case video
+        case normalize
     }
     
     struct MessageAttribute {
