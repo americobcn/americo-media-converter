@@ -46,8 +46,14 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     @IBOutlet weak var videoContainerButton:NSPopUpButton!
     @IBOutlet weak var videoFPSButton:NSPopUpButton!
     @IBOutlet weak var videoPadButton: NSButton!
-    
-        
+
+
+    // MARK: Normalize Outlets
+    @IBOutlet weak var normalizeTabView: NSTabViewItem!
+    @IBOutlet weak var normalizeLUFSControl: NSSegmentedControl!
+    @IBOutlet weak var normalizeOutTextView: NSTextView!
+
+
     // MARK: Media related variables
     
     
@@ -384,7 +390,8 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     @IBAction func startConversion(_ sender: NSButton) {
         audioOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         videoOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
-        
+        normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+
         if files.count < 1 {
             cancelConversionButton.isEnabled = false
             return
@@ -402,6 +409,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
                 resetAllProgressBar()
                 conversionType = .video
                 convertVideo()
+                break
+            case "Normalize":
+                resetAllProgressBar()
+                conversionType = .normalize
+                convertNormalize()
                 break
             default:
                 break
@@ -939,6 +951,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             case .video:
                 videoOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
                 scrollToBottom(videoOutTextView)
+            case .normalize:
+                normalizeOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
+                scrollToBottom(normalizeOutTextView)
             default:
             audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
             videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
@@ -1003,6 +1018,22 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         cell.progressView.contentFilters = [filter]
     }
     
+
+    func convertNormalize() {
+        guard let resourcesURL = Bundle.main.resourceURL else { return }
+        let scriptURL = resourcesURL.appendingPathComponent("normalize_r128.sh")
+        let lufsValues = [-23, -16, -14, -12]
+        let targetLUFS = lufsValues[normalizeLUFSControl.selectedSegment]
+
+        normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+
+        for (idx, file) in files.enumerated() {
+            cv.normalize(file: file, targetLUFS: targetLUFS, scriptURL: scriptURL,
+                         resourcesURL: resourcesURL, row: idx) { success, _, _ in
+                if !success { self.progressBarError(idx) }
+            }
+        }
+    }
 
     //MARK: NSTabView delegate methods
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
