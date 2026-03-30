@@ -48,7 +48,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     @IBOutlet weak var videoPadButton: NSButton!
 
 
-    // MARK: Normalize Outlets
+    // MARK: - Normalize Outlets
     @IBOutlet weak var normalizeTabView: NSTabViewItem!
     @IBOutlet weak var normalizeLUFSControl: NSSegmentedControl!
     @IBOutlet weak var normalizeOutTextView: NSTextView!
@@ -1023,7 +1023,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         guard let resourcesURL = Bundle.main.resourceURL else { return }
         let scriptURL = resourcesURL.appendingPathComponent("normalize_r128.sh")
         let lufsValues = [-23, -16, -14, -12]
-        let targetLUFS = lufsValues[normalizeLUFSControl.selectedSegment]
+        let segmentIndex = normalizeLUFSControl.selectedSegment
+        guard segmentIndex >= 0, segmentIndex < lufsValues.count else { return }
+        let targetLUFS = lufsValues[segmentIndex]
 
         normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
 
