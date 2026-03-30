@@ -161,15 +161,30 @@ class Converter {
             for line in lines.dropLast() {
                 guard !line.isEmpty else { continue }
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(line + "\n", Constants.MessageAttribute.regularMessageAttributes)
-                    if line.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 0.3) }
-                    else if line.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 0.7) }
-                    else if line.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 1.0) }
+                    self?.delegate?.shouldUpdateOutView(line.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
+                    if line.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
+                    else if line.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
+                    else if line.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
                 }
             }
         }
 
         process.terminationHandler = { [weak self] process in
+            // Drain any remaining pipe data and flush the buffer
+            fileHandle.readabilityHandler = nil
+            let finalData = fileHandle.readDataToEndOfFile()
+            if let finalChunk = String(data: finalData, encoding: .utf8), !finalChunk.isEmpty {
+                outputBuffer += finalChunk
+            }
+            let remaining = outputBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !remaining.isEmpty {
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.shouldUpdateOutView(remaining.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
+                    if remaining.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
+                    else if remaining.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
+                    else if remaining.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
+                }
+            }
             let status = process.terminationStatus
             DispatchQueue.main.async {
                 if status == 0 {
@@ -211,5 +226,11 @@ class Converter {
     
     deinit {
         cancelAllProcesses()
+    }
+}
+
+private extension String {
+    var strippingANSI: String {
+        replacingOccurrences(of: #"\x1B\[[0-9;]*m"#, with: "", options: .regularExpression)
     }
 }
