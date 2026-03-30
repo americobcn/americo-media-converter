@@ -133,6 +133,73 @@ class Converter {
         runningProcesses.remove(process)
     }
     
+    func normalize(file: mediaFile,
+                   targetLUFS: Int,
+                   scriptURL: URL,
+                   resourcesURL: URL,
+                   row: Int,
+                   completion: @escaping (Bool, String?, Int32) -> Void) {
+        delegate?.showProgressBar(row)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [scriptURL.path, "-i", "\(targetLUFS).0", file.mfURL.path]
+        process.environment = ["PATH": "\(resourcesURL.path):/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin"]
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+        let fileHandle = outputPipe.fileHandleForReading
+
+        var outputBuffer = ""
+        fileHandle.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard let chunk = String(data: data, encoding: .utf8), !chunk.isEmpty else { return }
+            outputBuffer += chunk
+            let lines = outputBuffer.components(separatedBy: "\n")
+            outputBuffer = lines.last ?? ""
+            for line in lines.dropLast() {
+                guard !line.isEmpty else { continue }
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.shouldUpdateOutView(line + "\n", Constants.MessageAttribute.regularMessageAttributes)
+                    if line.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 0.3) }
+                    else if line.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 0.7) }
+                    else if line.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 1.0) }
+                }
+            }
+        }
+
+        process.terminationHandler = { [weak self] process in
+            let status = process.terminationStatus
+            DispatchQueue.main.async {
+                if status == 0 {
+                    self?.delegate?.shouldUpdateOutView(
+                        "\nNormalization of \(file.mfURL.lastPathComponent) complete.\n",
+                        Constants.MessageAttribute.succesMessageAttributes)
+                } else {
+                    self?.delegate?.shouldUpdateOutView(
+                        "\nNormalization of \(file.mfURL.lastPathComponent) failed with status \(status).\n",
+                        Constants.MessageAttribute.errorMessageAttributes)
+                }
+                completion(status == 0, nil, status)
+            }
+            self?.runningProcesses.remove(process)
+        }
+
+        runningProcesses.insert(process)
+
+        do {
+            try process.run()
+        } catch {
+            DispatchQueue.main.async {
+                self.delegate?.shouldUpdateOutView(
+                    "\(file.mfURL.lastPathComponent): Failed to start normalization: \(error.localizedDescription)\n",
+                    Constants.MessageAttribute.errorMessageAttributes)
+                completion(false, error.localizedDescription, -1)
+            }
+        }
+    }
+
     func cancelAllProcesses() {
         for process in runningProcesses {
             if process.isRunning {
