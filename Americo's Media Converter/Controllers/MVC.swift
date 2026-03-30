@@ -955,8 +955,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
                 normalizeOutTextView.textStorage?.append(NSAttributedString(string: text, attributes: attr))
                 scrollToBottom(normalizeOutTextView)
             default:
-            audioOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
-            videoOutTextView.textStorage?.append(NSAttributedString(string: "audio and video not available", attributes: Constants.MessageAttribute.errorMessageAttributes))
+                break
         }
     }
     

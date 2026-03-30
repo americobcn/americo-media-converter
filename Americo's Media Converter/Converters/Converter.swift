@@ -140,6 +140,7 @@ class Converter {
                    row: Int,
                    completion: @escaping (Bool, String?, Int32) -> Void) {
         delegate?.showProgressBar(row)
+        delegate?.shouldUpdateOutView("Start Normalizing\n", Constants.MessageAttribute.succesMessageAttributes)
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
@@ -151,38 +152,42 @@ class Converter {
         process.standardError = outputPipe
         let fileHandle = outputPipe.fileHandleForReading
 
+        let bufferQueue = DispatchQueue(label: "normalize.buffer.\(row)")
         var outputBuffer = ""
         fileHandle.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             guard let chunk = String(data: data, encoding: .utf8), !chunk.isEmpty else { return }
-            outputBuffer += chunk
-            let lines = outputBuffer.components(separatedBy: "\n")
-            outputBuffer = lines.last ?? ""
-            for line in lines.dropLast() {
-                guard !line.isEmpty else { continue }
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(line.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
-                    if line.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
-                    else if line.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
-                    else if line.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
+            bufferQueue.sync {
+                outputBuffer += chunk
+                let lines = outputBuffer.components(separatedBy: "\n")
+                outputBuffer = lines.last ?? ""
+                for line in lines.dropLast() {
+                    guard !line.isEmpty else { continue }
+                    DispatchQueue.main.async { [weak self] in
+                        self?.delegate?.shouldUpdateOutView(line.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
+                        if line.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
+                        else if line.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
+                        else if line.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
+                    }
                 }
             }
         }
 
         process.terminationHandler = { [weak self] process in
-            // Drain any remaining pipe data and flush the buffer
             fileHandle.readabilityHandler = nil
             let finalData = fileHandle.readDataToEndOfFile()
-            if let finalChunk = String(data: finalData, encoding: .utf8), !finalChunk.isEmpty {
-                outputBuffer += finalChunk
-            }
-            let remaining = outputBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !remaining.isEmpty {
-                DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(remaining.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
-                    if remaining.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
-                    else if remaining.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
-                    else if remaining.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
+            bufferQueue.sync {
+                if let finalChunk = String(data: finalData, encoding: .utf8), !finalChunk.isEmpty {
+                    outputBuffer += finalChunk
+                }
+                let remaining = outputBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !remaining.isEmpty {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.delegate?.shouldUpdateOutView(remaining.strippingANSI + "\n", Constants.MessageAttribute.regularMessageAttributes)
+                        if remaining.contains("Pass 1/2") { self?.delegate?.conversionProgress(forRow: row, 30.0) }
+                        else if remaining.contains("Pass 2/2") { self?.delegate?.conversionProgress(forRow: row, 70.0) }
+                        else if remaining.contains("[OK]") { self?.delegate?.conversionProgress(forRow: row, 100.0) }
+                    }
                 }
             }
             let status = process.terminationStatus
