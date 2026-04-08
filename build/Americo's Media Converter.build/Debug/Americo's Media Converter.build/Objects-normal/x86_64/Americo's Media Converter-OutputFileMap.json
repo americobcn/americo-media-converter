@@ -1,0 +1,99 @@
+{
+  "" : {
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Americo's Media Converter-primary.dia",
+    "emit-module-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Americo's Media Converter-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Americo's Media Converter-primary-emit-module.dia",
+    "pch" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Americo's Media Converter-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Americo's Media Converter-primary.swiftdeps"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/AppDelegate.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AppDelegate~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Controllers/Constants.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Constants~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Controllers/MVC.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MVC~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Controllers/MediaController.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/MediaController~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Controllers/PreferenceManager.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/PreferenceManager~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Converters/Converter.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/Converter~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Views/AC3Buttons.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/AC3Buttons~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/Americo's Media Converter/Views/CustomCellView.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/CustomCellView~partial.swiftmodule"
+  },
+  "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/americo/dev/Xcode Projects/americo-media-converter/build/Americo's Media Converter.build/Debug/Americo's Media Converter.build/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

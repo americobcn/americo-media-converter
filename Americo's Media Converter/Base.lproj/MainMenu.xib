@@ -34,6 +34,9 @@
                 <outlet property="cancelConversionButton" destination="fXC-Of-BXf" id="9mB-yv-4DQ"/>
                 <outlet property="converterTabView" destination="A3l-Ya-IUo" id="ATg-FE-JtT"/>
                 <outlet property="filesTableView" destination="7iD-HE-fPz" id="hG7-DV-ydm"/>
+                <outlet property="normalizeLUFSControl" destination="nrm-SC-001" id="nrm-OC-001"/>
+                <outlet property="normalizeOutTextView" destination="nrm-TV-001" id="nrm-OT-001"/>
+                <outlet property="normalizeTabView" destination="nrm-TP-tab" id="nrm-OV-001"/>
                 <outlet property="playerView" destination="dpT-su-Ypf" id="eZ6-kR-tvV"/>
                 <outlet property="startConversionButton" destination="xBx-Yn-hD9" id="V1Y-x0-LMx"/>
                 <outlet property="videoCodecButton" destination="odS-sb-xC9" id="BsI-aT-7v5"/>
@@ -45,9 +48,6 @@
                 <outlet property="videoProfileButton" destination="Euf-Q4-WSj" id="Cq6-Yh-QjU"/>
                 <outlet property="videoResolutionButton" destination="fRc-aY-had" id="TdC-F2-hgv"/>
                 <outlet property="videoTabView" destination="piW-l2-exh" id="Vt8-AK-pgH"/>
-                <outlet property="normalizeTabView" destination="nrm-TP-tab" id="nrm-OV-001"/>
-                <outlet property="normalizeLUFSControl" destination="nrm-SC-001" id="nrm-OC-001"/>
-                <outlet property="normalizeOutTextView" destination="nrm-TV-001" id="nrm-OT-001"/>
                 <outlet property="view" destination="EiT-Mj-1SZ" id="Pto-9c-agM"/>
             </connections>
         </viewController>
@@ -337,7 +337,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                             <clipView key="contentView" drawsBackground="NO" id="nrm-CV-001">
                                                 <rect key="frame" x="0.0" y="0.0" width="843" height="360"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <autoresizingMask key="autoresizingMask"/>
                                                 <subviews>
                                                     <textView wantsLayer="YES" editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" selectionGranularity="word" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="nrm-TV-001">
                                                         <rect key="frame" x="0.0" y="0.0" width="843" height="360"/>
@@ -1166,5 +1166,6 @@ Gw
     <resources>
         <image name="hifispeaker" catalog="system" width="14" height="16"/>
         <image name="video" catalog="system" width="19" height="13"/>
+        <image name="waveform" catalog="system" width="16" height="16"/>
     </resources>
 </document>

@@ -1019,8 +1019,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
 
     func convertNormalize() {
-        guard let resourcesURL = Bundle.main.resourceURL else { return }
-        let scriptURL = resourcesURL.appendingPathComponent("normalize_r128.sh")
         let lufsValues = [-23, -16, -14, -12]
         let segmentIndex = normalizeLUFSControl.selectedSegment
         guard segmentIndex >= 0, segmentIndex < lufsValues.count else { return }
@@ -1029,8 +1027,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
 
         for (idx, file) in files.enumerated() {
-            cv.normalize(file: file, targetLUFS: targetLUFS, scriptURL: scriptURL,
-                         resourcesURL: resourcesURL, row: idx) { success, _, _ in
+            cv.normalize(file: file, targetLUFS: targetLUFS, row: idx) { success, _, _ in
                 if !success { self.progressBarError(idx) }
             }
         }
