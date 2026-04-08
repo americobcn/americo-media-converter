@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'Americo's Media Converter' in project 'Americo's Media Converter' (no dependencies)
