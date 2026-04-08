@@ -54,5 +54,11 @@ xcuserdata/
 americo-media-converter/Resources/
 americo-media-converter/Docs/
 
+build/
+.agents/
+.claude/
+.superpowers/
+docs/
+
 
 
