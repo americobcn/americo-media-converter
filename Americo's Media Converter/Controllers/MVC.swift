@@ -597,6 +597,22 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     }
     
     
+    func convertNormalize() {
+        let lufsValues = [-23, -16, -14, -12]
+        let segmentIndex = normalizeLUFSControl.selectedSegment
+        guard segmentIndex >= 0, segmentIndex < lufsValues.count else { return }
+        let targetLUFS = lufsValues[segmentIndex]
+
+        normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
+
+        for (idx, file) in files.enumerated() {
+            cv.normalize(file: file, targetLUFS: targetLUFS, row: idx) { success, _, _ in
+                if !success { self.progressBarError(idx) }
+            }
+        }
+    }
+    
+    
     
     @IBAction func audioTypeChanged(_ sender: NSPopUpButton) {
         switch sender.title {
@@ -1018,20 +1034,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     }
     
 
-    func convertNormalize() {
-        let lufsValues = [-23, -16, -14, -12]
-        let segmentIndex = normalizeLUFSControl.selectedSegment
-        guard segmentIndex >= 0, segmentIndex < lufsValues.count else { return }
-        let targetLUFS = lufsValues[segmentIndex]
-
-        normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
-
-        for (idx, file) in files.enumerated() {
-            cv.normalize(file: file, targetLUFS: targetLUFS, row: idx) { success, _, _ in
-                if !success { self.progressBarError(idx) }
-            }
-        }
-    }
+    
 
     //MARK: NSTabView delegate methods
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
