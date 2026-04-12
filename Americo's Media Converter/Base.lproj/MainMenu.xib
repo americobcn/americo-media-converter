@@ -228,7 +228,7 @@
                                             <autoresizingMask key="autoresizingMask"/>
                                             <clipView key="contentView" drawsBackground="NO" id="q0E-qj-rwU">
                                                 <rect key="frame" x="0.0" y="0.0" width="845" height="360"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <autoresizingMask key="autoresizingMask"/>
                                                 <subviews>
                                                     <textView wantsLayer="YES" importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="2Dw-25-1Ya">
                                                         <rect key="frame" x="0.0" y="0.0" width="845" height="360"/>
@@ -319,19 +319,6 @@
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
                                         </textField>
-                                        <segmentedControl fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nrm-SC-001">
-                                            <rect key="frame" x="14" y="396" width="420" height="28"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                            <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="nrm-SCC-01">
-                                                <font key="font" metaFont="system"/>
-                                                <segments>
-                                                    <segment label="-23 LUFS (EBU R128)" selected="YES"/>
-                                                    <segment label="-16 LUFS"/>
-                                                    <segment label="-14 LUFS"/>
-                                                    <segment label="-12 LUFS"/>
-                                                </segments>
-                                            </segmentedCell>
-                                        </segmentedControl>
                                         <scrollView fixedFrame="YES" borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nrm-SV-001">
                                             <rect key="frame" x="17" y="17" width="860" height="360"/>
                                             <autoresizingMask key="autoresizingMask"/>
@@ -358,6 +345,20 @@
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                         </scrollView>
+                                        <segmentedControl fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nrm-SC-001">
+                                            <rect key="frame" x="18" y="404" width="514" height="20"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                            <segmentedCell key="cell" controlSize="large" borderStyle="border" alignment="left" style="roundRect" trackingMode="selectOne" id="nrm-SCC-01">
+                                                <font key="font" metaFont="system"/>
+                                                <segments>
+                                                    <segment label="-23 LUFS (EBU R128)" selected="YES"/>
+                                                    <segment label="-16 LUFSs"/>
+                                                    <segment label="-14 LUFS"/>
+                                                    <segment label="-12 LUFS"/>
+                                                    <segment label="-24 LKFS(ATSC 85/A)"/>
+                                                </segments>
+                                            </segmentedCell>
+                                        </segmentedControl>
                                     </subviews>
                                 </view>
                             </tabViewItem>

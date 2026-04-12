@@ -598,7 +598,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     
     func convertNormalize() {
-        let lufsValues = [-23, -16, -14, -12]
+        let lufsValues = [-23, -16, -14, -12, -24]
         let segmentIndex = normalizeLUFSControl.selectedSegment
         guard segmentIndex >= 0, segmentIndex < lufsValues.count else { return }
         let targetLUFS = lufsValues[segmentIndex]

@@ -365,7 +365,8 @@ class Converter {
     }
 
     private static func normalizeOutputURL(for input: URL, targetLUFS: Int) -> URL {
-        let suffix = targetLUFS == -23 ? "_EBU_R128(\(targetLUFS)LUFS)" : "_(\(targetLUFS)LUFS)"
+        //let suffix = targetLUFS == -23 ? "_EBU_R128(\(targetLUFS)LUFS)" : "_(\(targetLUFS)LUFS)"
+        let suffix = targetLUFS == -23 ? "_EBU_R128(\(targetLUFS)LUFS)" : (targetLUFS == -24 ? "_ATSC85(\(targetLUFS)LKFS)" : "_(\(targetLUFS)LUFS)")
         let dir = input.deletingLastPathComponent()
         let name = input.deletingPathExtension().lastPathComponent
         let ext = input.pathExtension

@@ -131,7 +131,7 @@ actor MediaController {
         
         do {
             if try await urlAsset.load(.isPlayable) {
-                print("\(urlAsset.url) is playable")
+                // print("\(urlAsset.url) is playable")
                 var assetFormat = await getMetadata(asset: urlAsset)
                 let duration = try await urlAsset.load(.duration)
                 assetFormat["duration"] = CMTimeGetSeconds(duration)
