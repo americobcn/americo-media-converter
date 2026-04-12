@@ -226,18 +226,46 @@ class Converter {
                              outputURL.path]
             let (_, pass2Status) = Self.runNormalizeProcess(executableURL: ffmpegURL, arguments: pass2Args)
 
-            DispatchQueue.main.async { [weak self] in
-                if pass2Status == 0 {
-                    self?.delegate?.shouldUpdateOutView(
-                        "\nNormalization of \(file.mfURL.lastPathComponent) complete.\n",
-                        Constants.MessageAttribute.succesMessageAttributes)
-                    self?.delegate?.conversionProgress(forRow: row, 100.0)
-                } else {
+            guard pass2Status == 0 else {
+                DispatchQueue.main.async { [weak self] in
                     self?.delegate?.shouldUpdateOutView(
                         "\nNormalization of \(file.mfURL.lastPathComponent) failed with status \(pass2Status).\n",
                         Constants.MessageAttribute.errorMessageAttributes)
+                    completion(false, nil, pass2Status)
                 }
-                completion(pass2Status == 0, nil, pass2Status)
+                return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.delegate?.shouldUpdateOutView(
+                    "\nNormalization of \(file.mfURL.lastPathComponent) complete.\n",
+                    Constants.MessageAttribute.succesMessageAttributes)
+                self?.delegate?.conversionProgress(forRow: row, 90.0)
+                self?.delegate?.shouldUpdateOutView(
+                    "Pass 3/3 — Verifying output...\n",
+                    Constants.MessageAttribute.regularMessageAttributes)
+            }
+
+            let verification = Self.verifyNormalizedFile(url: outputURL, ffmpegURL: ffmpegURL, ffprobeURL: ffprobeURL)
+
+            DispatchQueue.main.async { [weak self] in
+                if let v = verification {
+                    let bitDepthStr = (v.bitDepth == "N/A" || v.bitDepth == "0") ? "N/A" : "\(v.bitDepth) bit"
+                    let sampleRateStr = v.sampleRate == "N/A" ? "N/A" : "\(v.sampleRate) Hz"
+                    let report = "  File:                \(outputURL.lastPathComponent)\n" +
+                                 "  Bit depth:           \(bitDepthStr)\n" +
+                                 "  Sample rate:         \(sampleRateStr)\n" +
+                                 "  Integrated loudness: \(v.integratedLoudness)\n" +
+                                 "  Loudness range:      \(v.loudnessRange)\n" +
+                                 "  True peak:           \(v.truePeak)\n"
+                    self?.delegate?.shouldUpdateOutView(report, Constants.MessageAttribute.regularMessageAttributes)
+                } else {
+                    self?.delegate?.shouldUpdateOutView(
+                        "Verification failed — could not read output file stats.\n",
+                        Constants.MessageAttribute.errorMessageAttributes)
+                }
+                self?.delegate?.conversionProgress(forRow: row, 100.0)
+                completion(true, nil, 0)
             }
         }
     }
@@ -342,6 +370,50 @@ class Converter {
         let name = input.deletingPathExtension().lastPathComponent
         let ext = input.pathExtension
         return dir.appendingPathComponent(name + suffix + (ext.isEmpty ? "" : "." + ext))
+    }
+
+    private struct VerificationResult {
+        let bitDepth: String
+        let sampleRate: String
+        let integratedLoudness: String
+        let loudnessRange: String
+        let truePeak: String
+    }
+
+    private static func verifyNormalizedFile(url: URL, ffmpegURL: URL, ffprobeURL: URL) -> VerificationResult? {
+        let probeArgs = ["-v", "error", "-select_streams", "a:0",
+                         "-show_entries", "stream=sample_rate,bits_per_raw_sample",
+                         "-of", "csv=p=0", url.path]
+        let (probeOutput, probeStatus) = runNormalizeProcess(executableURL: ffprobeURL, arguments: probeArgs)
+        guard probeStatus == 0 else { return nil }
+        let parts = probeOutput.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: ",")
+        let sampleRate = parts.count >= 1 && !parts[0].isEmpty ? parts[0] : "N/A"
+        let bitDepth = parts.count >= 2 && !parts[1].isEmpty ? parts[1] : "N/A"
+
+        let ebur128Args = ["-hide_banner", "-nostdin", "-v", "info",
+                           "-i", url.path,
+                           "-af", "ebur128=peak=true",
+                           "-f", "null", "/dev/null"]
+        let (ebur128Output, ebur128Status) = runNormalizeProcess(executableURL: ffmpegURL, arguments: ebur128Args)
+        guard ebur128Status == 0 else { return nil }
+
+        let integratedLoudness = parseEBUR128Value(from: ebur128Output, key: "I:") ?? "N/A"
+        let loudnessRange = parseEBUR128Value(from: ebur128Output, key: "LRA:") ?? "N/A"
+        let truePeak = parseEBUR128Value(from: ebur128Output, key: "Peak:") ?? "N/A"
+
+        return VerificationResult(bitDepth: bitDepth, sampleRate: sampleRate,
+                                  integratedLoudness: integratedLoudness,
+                                  loudnessRange: loudnessRange, truePeak: truePeak)
+    }
+
+    private static func parseEBUR128Value(from output: String, key: String) -> String? {
+        for line in output.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix(key) {
+                return String(trimmed.dropFirst(key.count)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return nil
     }
 
     // MARK: - Cancel
