@@ -1,6 +1,5 @@
 import Cocoa
 import AVFoundation
-import AVKit
 
 struct mediaFile: @unchecked Sendable {
     var mfURL: URL
@@ -18,7 +17,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     // MARK: Views Outlets
     @IBOutlet weak var filesTableView: NSTableView!
-    @IBOutlet weak var playerView: AVPlayerView!
+    @IBOutlet weak var playerView: MPVPlayerView!
     @IBOutlet weak var startConversionButton: NSButton!
     @IBOutlet weak var cancelConversionButton: NSButton!
     @IBOutlet weak var converterTabView: NSTabView!
@@ -284,9 +283,6 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     // MARK: Views setup
     func setupPlayerView() {
-        playerView.wantsLayer = true
-        playerView.showsFrameSteppingButtons = true
-        playerView.player = AVPlayer()
     }
     
     
@@ -798,9 +794,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         let tableView = notification.object as! NSTableView
         let selectedRow = tableView.selectedRow
         if selectedRow != -1 {
-            let item = AVPlayerItem(url: files[selectedRow].mfURL)
-            playerView.player?.replaceCurrentItem(with: item)
-            playerView.player?.rate = 0.0
+            playerView.load(url: files[selectedRow].mfURL)
         }
     }
     
@@ -930,12 +924,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
     
     
     private func playPause() {
-        guard let rate = playerView.player?.rate else { return }
-        if rate == 0.0  {
-            playerView.player?.play()
-        } else {
-            playerView.player?.pause()
-        }
+        playerView.togglePause()
     }
     
     
@@ -952,8 +941,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         }
     
         filesTableView.removeRows(at: selectedIndexes, withAnimation: .effectFade)
-        playerView.player?.rate = 0.0
-        playerView.player?.replaceCurrentItem(with: nil)
+        playerView.clear()
     }
     
     

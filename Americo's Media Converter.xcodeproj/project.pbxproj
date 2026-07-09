@@ -11,6 +11,7 @@
 		1E3B81092D9010CC003FABF5 /* MediaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3B81082D9010CC003FABF5 /* MediaController.swift */; };
 		1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */; };
 		1EBD8D1C2E9A7B230022B1B5 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */; };
+		1EFA0001000000000000BB01 /* MPVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFA0001000000000000AA01 /* MPVPlayerView.swift */; };
 		1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA4B692D8DC21E005152DF /* AppDelegate.swift */; };
 		1EEA4B6C2D8DC220005152DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6B2D8DC220005152DF /* Assets.xcassets */; };
 		1EEA4B6F2D8DC220005152DF /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6D2D8DC220005152DF /* MainMenu.xib */; };
@@ -21,6 +22,8 @@
 
 /* Begin PBXFileReference section */
 		1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCellView.swift; sourceTree = "<group>"; };
+		1EFA0001000000000000AA01 /* MPVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVPlayerView.swift; sourceTree = "<group>"; };
+		1EFA0002000000000000AA02 /* americo-media-converter-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "americo-media-converter-Bridging-Header.h"; sourceTree = "<group>"; };
 		1E3B81082D9010CC003FABF5 /* MediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaController.swift; sourceTree = "<group>"; };
 		1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AC3Buttons.swift; sourceTree = "<group>"; };
 		1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
@@ -65,6 +68,7 @@
 			children = (
 				1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */,
 				1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */,
+				1EFA0001000000000000AA01 /* MPVPlayerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -117,6 +121,7 @@
 				1EEA4B6B2D8DC220005152DF /* Assets.xcassets */,
 				1EEA4B6D2D8DC220005152DF /* MainMenu.xib */,
 				1EEA4B702D8DC220005152DF /* americo-media-converter.entitlements */,
+				1EFA0002000000000000AA02 /* americo-media-converter-Bridging-Header.h */,
 			);
 			path = "Americo's Media Converter";
 			sourceTree = "<group>";
@@ -226,6 +231,7 @@
 				1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */,
 				1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */,
 				1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */,
+				1EFA0001000000000000BB01 /* MPVPlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,6 +379,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lmpv",
+					"-framework",
+					OpenGL,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "Americo's Media Converter/americo-media-converter-Bridging-Header.h";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Americo's Media Converter/americo-media-converter.entitlements";
@@ -432,6 +453,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lmpv",
+					"-framework",
+					OpenGL,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "Americo's Media Converter/americo-media-converter-Bridging-Header.h";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Americo's Media Converter/americo-media-converter.entitlements";
