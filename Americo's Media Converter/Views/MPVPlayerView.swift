@@ -43,6 +43,8 @@ final class MPVGLLayer: CAOpenGLLayer {
 
     override func draw(inCGLContext ctx: CGLContextObj, pixelFormat pf: CGLPixelFormatObj,
                        forLayerTime t: CFTimeInterval, displayTime ts: UnsafePointer<CVTimeStamp>?) {
+        CGLLockContext(ctx)
+        defer { CGLUnlockContext(ctx) }
         owner?.ensureRenderContext()
         guard let renderContext = owner?.renderContext else {
             glClearColor(0, 0, 0, 1)
@@ -69,18 +71,26 @@ final class MPVGLLayer: CAOpenGLLayer {
             }
         }
     }
+
+    override func display() {
+        super.display()
+        CATransaction.flush()
+    }
 }
 
 // MARK: - Scrubber slider
 
 private final class ScrubberSlider: NSSlider {
     private(set) var isTracking = false
+    var onTrackingEnded: (() -> Void)?
 
     override func mouseDown(with event: NSEvent) {
         isTracking = true
         super.mouseDown(with: event)
         isTracking = false
+        onTrackingEnded?()
     }
+    
 }
 
 // MARK: - Player view
@@ -90,9 +100,10 @@ final class MPVPlayerView: NSView {
     fileprivate var mpvHandle: OpaquePointer?
     fileprivate var renderContext: OpaquePointer?
     private var glLayer: MPVGLLayer? { layer as? MPVGLLayer }
+    private var mpvLayer: MPVGLLayer?
+    private let renderQueue = DispatchQueue(label: "mpv-render")
     private var eventThread: Thread?
     private var trackingArea: NSTrackingArea?
-
     private var controlBar: NSVisualEffectView?
     private var playPauseButton: NSButton?
     private var audioButton: NSButton?
@@ -133,12 +144,15 @@ final class MPVPlayerView: NSView {
         backingLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         backingLayer.needsDisplayOnBoundsChange = true
         backingLayer.backgroundColor = NSColor.black.cgColor
+        mpvLayer = backingLayer
         return backingLayer
     }
 
     deinit {
         hoverPollTimer?.invalidate()
         if let renderContext = renderContext {
+            mpv_render_context_set_update_callback(renderContext, nil, nil)
+            renderQueue.sync {}
             mpv_render_context_free(renderContext)
         }
         if let mpvHandle = mpvHandle {
@@ -234,8 +248,8 @@ final class MPVPlayerView: NSView {
     }
 
     fileprivate func requestRedraw() {
-        DispatchQueue.main.async { [weak self] in
-            self?.glLayer?.setNeedsDisplay()
+        renderQueue.async { [weak self] in
+            self?.mpvLayer?.display()
         }
     }
 
@@ -244,20 +258,21 @@ final class MPVPlayerView: NSView {
     func load(url: URL) {
         setPropertyString("pause", "yes")
         let target = url.isFileURL ? url.path : url.absoluteString
-        command(["loadfile", target])
+        // command(["loadfile", target])
+        command(MPVCommand.loadfile, args: [target])
     }
 
     func togglePause() {
         if isAtEndOfFile {
-            command(["seek", "0", "absolute"])
+            command(MPVCommand.seek, args: ["0", "absolute"])
             setPropertyString("pause", "no")
         } else {
-            command(["cycle", "pause"])
+            command(MPVCommand.cycle, args: ["pause"])
         }
     }
 
     func clear() {
-        command(["stop"])
+        command(MPVCommand.stop)
         seekSlider?.doubleValue = 0
         seekSlider?.maxValue = 1
         currentTimeLabel?.stringValue = "0:00"
@@ -267,15 +282,48 @@ final class MPVPlayerView: NSView {
     }
 
     // MARK: mpv helpers
-
-    private func command(_ args: [String]) {
-        guard let mpv = mpvHandle else { return }
-        var cArgs: [UnsafePointer<CChar>?] = args.map { strdup($0).map { UnsafePointer($0) } }
-        cArgs.append(nil)
-        mpv_command(mpv, &cArgs)
-        for pointer in cArgs where pointer != nil { free(UnsafeMutablePointer(mutating: pointer)) }
+    
+    private func makeCArgs(_ command: MPVCommand, _ args: [String?]) -> [String?] {
+      if args.count > 0 && args.last == nil {
+        print("Warning: last element in args is nil")
+      }
+        
+      var strArgs = args
+      strArgs.insert(command.rawValue, at: 0)
+      strArgs.append(nil)
+      return strArgs
     }
-
+    
+    
+    func command(_ command: MPVCommand, args: [String?] = [], returnValueCallback: ((Int32) -> Void)? = nil) {
+        guard let mpv = mpvHandle else { return }
+        var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
+        defer {
+            for ptr in cargs {
+                if (ptr != nil) {
+                    free(UnsafeMutablePointer(mutating: ptr!))
+                }
+            }
+        }
+        let returnValue = mpv_command(mpv, &cargs)
+        // print("\(command.rawValue): \(returnValue)")
+    }
+    
+    func asyncCommand(_ command: MPVCommand, args: [String?] = [], replyUserdata: UInt64, returnValueCallback: ((Int32) -> Void)? = nil) {
+        guard let mpv = mpvHandle else { return }
+        var cargs = makeCArgs(command, args).map { $0.flatMap { UnsafePointer<CChar>(strdup($0)) } }
+        defer {
+            for ptr in cargs {
+                if (ptr != nil) {
+                    free(UnsafeMutablePointer(mutating: ptr!))
+                }
+            }
+        }
+        let returnValue = mpv_command_async(mpv, replyUserdata, &cargs)
+        print("\(command.rawValue): \(returnValue)")
+    }
+    
+    
     private func setPropertyString(_ name: String, _ value: String) {
         guard let mpv = mpvHandle else { return }
         mpv_set_property_string(mpv, name, value)
@@ -356,6 +404,10 @@ final class MPVPlayerView: NSView {
         seek.isContinuous = true
         seek.translatesAutoresizingMaskIntoConstraints = false
         seek.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        seek.onTrackingEnded = { [weak self] in
+            guard let self, let seekSlider = self.seekSlider else { return }
+            self.command(MPVCommand.seek, args: ["\(seekSlider.doubleValue)", "absolute+exact"])
+        }
         seekSlider = seek
 
         let volume = ScrubberSlider(value: 100, minValue: 0, maxValue: 100, target: self, action: #selector(volumeSliderChanged))
@@ -391,29 +443,29 @@ final class MPVPlayerView: NSView {
     }
 
     @objc private func goToStartTapped() {
-        command(["seek", "0", "absolute"])
+        command(MPVCommand.seek, args: ["0", "absolute"])
     }
 
     @objc private func goToEndTapped() {
-        command(["seek", "100", "absolute-percent"])
+        command(MPVCommand.seek, args: ["100", "absolute-percent"])
     }
 
     @objc private func cycleSubtitlesTapped() {
-        command(["cycle", "sub"])
+        command(MPVCommand.cycle, args: ["sub"])
     }
 
     @objc private func muteToggledTapped() {
-        command(["cycle", "mute"])
+        command(MPVCommand.cycle, args: ["mute"])
     }
 
     @objc private func seekSliderChanged() {
         guard let seekSlider = seekSlider else { return }
-        command(["seek", "\(seekSlider.doubleValue)", "absolute"])
+        command(MPVCommand.seek, args: ["\(seekSlider.doubleValue)", "absolute+exact"]) // absolute+exact
     }
 
     @objc private func volumeSliderChanged() {
         guard let volumeSlider = volumeSlider else { return }
-        command(["set", "volume", "\(Int(volumeSlider.doubleValue))"])
+        command(MPVCommand.set, args: ["volume", "\(Int(volumeSlider.doubleValue))"])
     }
 
     // MARK: Property updates
@@ -421,6 +473,7 @@ final class MPVPlayerView: NSView {
     private func applyProperty(_ name: String, double value: Double) {
         switch name {
             case "time-pos":
+                // seekSlider?.doubleValue = value
                 if seekSlider?.isTracking != true {
                     seekSlider?.doubleValue = value
                 }
