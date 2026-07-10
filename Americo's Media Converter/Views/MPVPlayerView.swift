@@ -342,7 +342,7 @@ final class MPVPlayerView: NSView {
         let playPause = makeControlButton(symbol: "play.fill", action: #selector(playPauseTapped))
         let endButton = makeControlButton(symbol: "forward.end.fill", action: #selector(goToEndTapped))
         let subtitleButton = makeControlButton(symbol: "captions.bubble", action: #selector(cycleSubtitlesTapped))
-        let audioButton = makeControlButton(symbol: "speaker.wave.2.fill", action: #selector(cycleAudioTrackTapped))
+        let audioButton = makeControlButton(symbol: "speaker.wave.2.fill", action: #selector(muteToggledTapped))
         playPauseButton = playPause
 
         let currentTime = makeTimeLabel()
@@ -400,9 +400,9 @@ final class MPVPlayerView: NSView {
         command(["cycle", "sub"])
     }
 
-    @objc private func cycleAudioTrackTapped() {
-        command(["cycle", "audio"])
-        }
+    @objc private func muteToggledTapped() {
+        command(["cycle", "mute"])
+    }
 
     @objc private func seekSliderChanged() {
         guard let seekSlider = seekSlider else { return }
