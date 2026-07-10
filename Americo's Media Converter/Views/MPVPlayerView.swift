@@ -175,6 +175,7 @@ final class MPVPlayerView: NSView {
         mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG)
         mpv_observe_property(mpv, 0, "volume", MPV_FORMAT_DOUBLE)
         mpv_observe_property(mpv, 0, "eof-reached", MPV_FORMAT_FLAG)
+        mpv_observe_property(mpv, 0, "mute", MPV_FORMAT_FLAG)
     }
 
     fileprivate func ensureRenderContext() {
@@ -401,7 +402,7 @@ final class MPVPlayerView: NSView {
 
     @objc private func cycleAudioTrackTapped() {
         command(["cycle", "audio"])
-    }
+        }
 
     @objc private func seekSliderChanged() {
         guard let seekSlider = seekSlider else { return }
