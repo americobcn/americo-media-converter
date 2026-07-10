@@ -95,6 +95,7 @@ final class MPVPlayerView: NSView {
 
     private var controlBar: NSVisualEffectView?
     private var playPauseButton: NSButton?
+    private var audioButton: NSButton?
     private var seekSlider: ScrubberSlider?
     private var volumeSlider: ScrubberSlider?
     private var currentTimeLabel: NSTextField?
@@ -343,6 +344,7 @@ final class MPVPlayerView: NSView {
         let endButton = makeControlButton(symbol: "forward.end.fill", action: #selector(goToEndTapped))
         let subtitleButton = makeControlButton(symbol: "captions.bubble", action: #selector(cycleSubtitlesTapped))
         let audioButton = makeControlButton(symbol: "speaker.wave.2.fill", action: #selector(muteToggledTapped))
+        self.audioButton = audioButton
         playPauseButton = playPause
 
         let currentTime = makeTimeLabel()
@@ -442,6 +444,11 @@ final class MPVPlayerView: NSView {
         switch name {
             case "pause":
                 playPauseButton?.image = Self.symbolImage(value != 0 ? "play.fill" : "pause.fill")
+                break
+            case "mute":
+                let isMuted = value != 0
+                audioButton?.image = Self.symbolImage(isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                volumeSlider?.isEnabled = !isMuted
                 break
             case "eof-reached":
                 isAtEndOfFile = value != 0
