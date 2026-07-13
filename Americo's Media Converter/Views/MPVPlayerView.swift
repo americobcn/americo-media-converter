@@ -46,7 +46,7 @@ final class MPVGLLayer: CAOpenGLLayer {
         CGLLockContext(ctx)
         defer { CGLUnlockContext(ctx) }
         owner?.ensureRenderContext()
-        guard let renderContext = owner?.renderContext else {
+        guard let renderContext = owner?.renderContext, owner?.hasVideoContent == true else {
             glClearColor(0, 0, 0, 1)
             glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
             glFlush()
@@ -99,6 +99,7 @@ final class MPVPlayerView: NSView {
 
     fileprivate var mpvHandle: OpaquePointer?
     fileprivate var renderContext: OpaquePointer?
+    fileprivate var hasVideoContent: Bool = false
     private var glLayer: MPVGLLayer? { layer as? MPVGLLayer }
     private var mpvLayer: MPVGLLayer?
     private let renderQueue = DispatchQueue(label: "mpv-render")
@@ -255,7 +256,12 @@ final class MPVPlayerView: NSView {
 
     // MARK: Public API
 
-    func load(url: URL) {
+    func load(url: URL, hasVideo: Bool) {
+        if hasVideo {
+            hasVideoContent = true
+        } else {
+            blankVideoSurface()
+        }
         setPropertyString("pause", "yes")
         let target = url.isFileURL ? url.path : url.absoluteString
         // command(["loadfile", target])
@@ -273,12 +279,18 @@ final class MPVPlayerView: NSView {
 
     func clear() {
         command(MPVCommand.stop)
+        blankVideoSurface()
         seekSlider?.doubleValue = 0
         seekSlider?.maxValue = 1
         currentTimeLabel?.stringValue = "0:00"
         durationLabel?.stringValue = "0:00"
         playPauseButton?.image = Self.symbolImage("play.fill")
         isAtEndOfFile = false
+    }
+
+    private func blankVideoSurface() {
+        hasVideoContent = false
+        requestRedraw()
     }
 
     // MARK: mpv helpers

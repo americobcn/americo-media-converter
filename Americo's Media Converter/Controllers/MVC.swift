@@ -794,7 +794,10 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         let tableView = notification.object as! NSTableView
         let selectedRow = tableView.selectedRow
         if selectedRow != -1 {
-            playerView.load(url: files[selectedRow].mfURL)
+            let hasVideo = files[selectedRow].formatDescription.keys.contains("videoDesc")
+            playerView.load(url: files[selectedRow].mfURL, hasVideo: hasVideo)
+        } else {
+            playerView.clear()
         }
     }
     
