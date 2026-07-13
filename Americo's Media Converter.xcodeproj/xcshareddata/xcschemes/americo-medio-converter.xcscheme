@@ -75,5 +75,23 @@
       buildConfiguration = "Release"
       customArchiveName = "Americo&apos;s Media Converter"
       revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Embed libmpv"
+               scriptText = "&quot;${SRCROOT}/Scripts/bundle-libmpv.sh&quot; &quot;${ARCHIVE_PRODUCTS_PATH}/Applications/Americo&apos;s Media Converter.app&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "1EEA4B652D8DC21E005152DF"
+                     BuildableName = "Americo&apos;s Media Converter.app"
+                     BlueprintName = "Americo&apos;s Media Converter"
+                     ReferencedContainer = "container:Americo&apos;s Media Converter.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </ArchiveAction>
 </Scheme>
