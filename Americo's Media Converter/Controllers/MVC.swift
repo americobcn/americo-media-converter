@@ -862,50 +862,67 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
                   !pasteboardObjects.isEmpty else {
                 return false
             }
-            
-            let fileCount = pasteboardObjects.count
-            showLoadingStatus(fileCount: fileCount)
-            
-            Task { [weak self] in
-                guard let self = self else { return }
-                
-                var newFiles: [mediaFile] = []
-                
-                await withTaskGroup(of: mediaFile?.self) { group in
-                    for object in pasteboardObjects {
-                        guard let url = object as? NSURL,
-                              let path = url.path else { continue }
-                        
-                        group.addTask { [weak self] in
-                            guard let self = self else { return nil }
-                            let mfInfo = await self.mc.isAVMediaType(url: URL(fileURLWithPath: path))
-                            guard mfInfo.isPlayable else { return nil }
-                            return mediaFile(mfURL: URL(fileURLWithPath: path), formatDescription: mfInfo.formats)
-                        }
-                    }
-                    
-                    for await result in group {
-                        if let file = result {
-                            newFiles.append(file)
-                        }
-                    }
-                }
-                
-                self.files.append(contentsOf: newFiles)
-                self.hideLoadingStatus()
-                self.filesTableView.reloadData()
-                self.cancelConversionButton.isEnabled = !self.files.isEmpty
-                self.startConversionButton.isEnabled = !self.files.isEmpty
-            }
-            
+
+            addMediaFiles(from: pasteboardObjects)
             return true
         }
-        
+
         return false
     }
-    
-    
-    
+
+
+
+    // MARK: Paste from pasteboard (Cmd+V, alternative to drag-and-drop)
+    @objc func paste(_ sender: Any?) {
+        guard let pasteboardObjects = NSPasteboard.general.readObjects(forClasses: [NSURL.self], options: nil),
+              !pasteboardObjects.isEmpty else {
+            return
+        }
+
+        addMediaFiles(from: pasteboardObjects)
+    }
+
+
+
+    private func addMediaFiles(from pasteboardObjects: [Any]) {
+        let fileCount = pasteboardObjects.count
+        showLoadingStatus(fileCount: fileCount)
+
+        Task { [weak self] in
+            guard let self = self else { return }
+
+            var newFiles: [mediaFile] = []
+
+            await withTaskGroup(of: mediaFile?.self) { group in
+                for object in pasteboardObjects {
+                    guard let url = object as? NSURL,
+                          let path = url.path else { continue }
+
+                    group.addTask { [weak self] in
+                        guard let self = self else { return nil }
+                        let mfInfo = await self.mc.isAVMediaType(url: URL(fileURLWithPath: path))
+                        guard mfInfo.isPlayable else { return nil }
+                        return mediaFile(mfURL: URL(fileURLWithPath: path), formatDescription: mfInfo.formats)
+                    }
+                }
+
+                for await result in group {
+                    if let file = result {
+                        newFiles.append(file)
+                    }
+                }
+            }
+
+            self.files.append(contentsOf: newFiles)
+            self.hideLoadingStatus()
+            self.filesTableView.reloadData()
+            self.cancelConversionButton.isEnabled = !self.files.isEmpty
+            self.startConversionButton.isEnabled = !self.files.isEmpty
+        }
+    }
+
+
+
     // MARK: Keyboard event handlers
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
