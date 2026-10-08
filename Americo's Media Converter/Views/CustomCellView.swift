@@ -134,7 +134,7 @@ class AC3ProgressIndicator: NSProgressIndicator {
     var stepAnimationDuration: TimeInterval = 0.15
     
     /// The display link for smooth animation
-    private var displayLink: CVDisplayLink?
+    private var animationLink: CADisplayLink?
     
     /// The start time of the current animation
     private var animationStartTime: TimeInterval = 0
@@ -146,54 +146,27 @@ class AC3ProgressIndicator: NSProgressIndicator {
     private var isAnimating: Bool = false
     
     // MARK: - Initialization
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupDisplayLink()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupDisplayLink()
-    }
-    
+
     deinit {
-        stopDisplayLink()
+        animationLink?.invalidate()
     }
-    
-    // MARK: - Setup
-    
-    private func setupDisplayLink() {
-        // Create display link for smooth animation
-        CVDisplayLinkCreateWithActiveCGDisplays(&displayLink)
-        
-        guard let displayLink = displayLink else { return }
-        
-        // Set the output callback
-        CVDisplayLinkSetOutputCallback(displayLink, { (_, _, _, _, _, userInfo) -> CVReturn in
-            guard let userInfo = userInfo else { return kCVReturnSuccess }
-            let indicator = Unmanaged<AC3ProgressIndicator>.fromOpaque(userInfo).takeUnretainedValue()
-            
-            DispatchQueue.main.async {
-                indicator.updateAnimation()
-            }
-            
-            return kCVReturnSuccess
-        }, Unmanaged.passUnretained(self).toOpaque())
-    }
-    
+
+    // MARK: - Display Link
+
     private func startDisplayLink() {
-        guard let displayLink = displayLink else { return }
-        if !CVDisplayLinkIsRunning(displayLink) {
-            CVDisplayLinkStart(displayLink)
-        }
+        guard animationLink == nil else { return }
+        let link = displayLink(target: self, selector: #selector(displayLinkFired))
+        link.add(to: .main, forMode: .common)
+        animationLink = link
     }
-    
+
     private func stopDisplayLink() {
-        guard let displayLink = displayLink else { return }
-        if CVDisplayLinkIsRunning(displayLink) {
-            CVDisplayLinkStop(displayLink)
-        }
+        animationLink?.invalidate()
+        animationLink = nil
+    }
+
+    @objc private func displayLinkFired() {
+        updateAnimation()
     }
     
     // MARK: - Public Methods
