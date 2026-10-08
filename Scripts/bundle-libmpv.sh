@@ -1,56 +1,110 @@
 #!/bin/bash
-# Vendors libmpv and all of its Homebrew dependency dylibs into a built .app so
-# the app runs on machines without Homebrew. Run AFTER building in Xcode.
+# Vendors libmpv and all of its Homebrew dependency dylibs into the built .app so
+# the app runs on machines without Homebrew. Runs from the target's "Embed libmpv"
+# build phase on every build (Debug, Release, Archive), before Xcode code-signs the bundle.
 #
 #   Scripts/bundle-libmpv.sh "/path/to/Americo's Media Converter.app"
 #
 # It copies libmpv + its transitive deps into Contents/Frameworks, rewrites the
-# install names to @rpath (the app already has @executable_path/../Frameworks on
-# its runpath), then ad-hoc re-signs the bundle so the dylibs load under the
-# hardened runtime. For notarized distribution, re-sign with a Developer ID.
+# install names to @rpath, signs the copied dylibs, and finally verifies that nothing in
+# the bundle still points outside the system or the bundle itself.
 set -euo pipefail
 
 # Xcode.app launched from Finder/Dock/Spotlight doesn't inherit the interactive shell's
-# PATH, so Homebrew tools (dylibbundler) are invisible to scheme pre/post-action scripts
+# PATH, so Homebrew tools (dylibbundler) are invisible to build phases and scheme actions
 # even though they work fine from a Terminal-launched xcodebuild. Force it explicitly.
 export PATH="/opt/homebrew/bin:$PATH"
 
 APP="${1:?Usage: bundle-libmpv.sh <path-to-.app>}"
-BIN="$APP/Contents/MacOS/Americo's Media Converter"
+MACOS="$APP/Contents/MacOS"
 FRAMEWORKS="$APP/Contents/Frameworks"
+IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY:--}"
 
-[ -x "$BIN" ] || { echo "Executable not found: $BIN"; exit 1; }
-command -v dylibbundler >/dev/null || { echo "dylibbundler missing: brew install dylibbundler"; exit 1; }
+[ -d "$MACOS" ] || { echo "error: $MACOS not found"; exit 1; }
+command -v dylibbundler >/dev/null || { echo "error: dylibbundler missing: brew install dylibbundler"; exit 1; }
 
-mkdir -p "$FRAMEWORKS"
+# Debug builds split the app into a stub executable plus "<name>.debug.dylib" (and
+# __preview.dylib); the real code, and the libmpv reference, lives in the debug dylib.
+# Fix every Mach-O in MacOS/ that still points at Homebrew.
+targets=()
+while IFS= read -r file; do
+  if otool -L "$file" 2>/dev/null | grep -q '/opt/homebrew/'; then
+    targets+=("$file")
+  fi
+done < <(find "$MACOS" -type f)
 
-dylibbundler \
-  --overwrite-files \
-  --bundle-deps \
-  --create-dir \
-  --fix-file "$BIN" \
-  --dest-dir "$FRAMEWORKS" \
-  --install-path "@rpath/" \
-  --search-path /opt/homebrew/lib
+if [ "${#targets[@]}" -gt 0 ]; then
+  mkdir -p "$FRAMEWORKS"
 
-# dylibbundler adds an rpath equal to the literal --install-path string ("@rpath/") to
-# the main binary AND to every dylib it copies. That's not a real search path, so every
-# @rpath/*.dylib reference in the chain (main binary -> libmpv -> its own sibling deps
-# like libavcodec) is unresolvable. Strip it everywhere and restore a real search path:
-# @executable_path/../Frameworks on the main binary, @loader_path (same directory) on
-# each sibling dylib.
-fix_rpath() {
-  local file="$1" real_rpath="$2"
-  while install_name_tool -delete_rpath "@rpath/" "$file" 2>/dev/null; do :; done
-  install_name_tool -add_rpath "$real_rpath" "$file" 2>/dev/null || true
-}
+  fix_args=()
+  for file in "${targets[@]}"; do
+    fix_args+=(--fix-file "$file")
+  done
 
-fix_rpath "$BIN" "@executable_path/../Frameworks"
-for dylib in "$FRAMEWORKS"/*.dylib; do
-  fix_rpath "$dylib" "@loader_path"
-done
+  dylibbundler \
+    --overwrite-files \
+    --bundle-deps \
+    --create-dir \
+    "${fix_args[@]}" \
+    --dest-dir "$FRAMEWORKS" \
+    --install-path "@rpath/" \
+    --search-path /opt/homebrew/lib
 
-codesign --force --deep --sign - "$APP"
+  # dylibbundler adds an rpath equal to the literal --install-path string ("@rpath/") to
+  # every file it touches. That's not a real search path, so every @rpath/*.dylib
+  # reference in the chain (app -> libmpv -> its own sibling deps like libavcodec) is
+  # unresolvable. Strip it and restore a real search path: @executable_path/../Frameworks
+  # on the app's own code, @loader_path (same directory) on each sibling dylib.
+  fix_rpath() {
+    local file="$1" real_rpath="$2"
+    while install_name_tool -delete_rpath "@rpath/" "$file" 2>/dev/null; do :; done
+    install_name_tool -add_rpath "$real_rpath" "$file" 2>/dev/null || true
+  }
 
-echo "Bundled into $FRAMEWORKS:"
-ls "$FRAMEWORKS"
+  # 1. Modificar los rpaths de todo el mundo primero (SIN firmar todavía)
+  for file in "${targets[@]}"; do
+    fix_rpath "$file" "@executable_path/../Frameworks"
+  done
+  for dylib in "$FRAMEWORKS"/*.dylib; do
+    fix_rpath "$dylib" "@loader_path"
+  done
+
+  # 2. Forzar un refresco del sistema de archivos para evitar el problema de "Invalid Page"
+  sync
+
+  # 3. Firmar TODO en un único bloque limpio al final.
+  echo "Firmando dependencias y binarios modificados..."
+  for file in "${targets[@]}" "$FRAMEWORKS"/*.dylib; do
+    if [ ! -L "$file" ]; then
+      # 1. Eliminamos cualquier firma previa de forma agresiva
+      codesign --remove-signature "$file" 2>/dev/null || true
+      
+      # 2. Truco definitivo: Actualizamos la fecha del archivo. 
+      # Esto engaña al Kernel de macOS y destruye el caché de "Invalid Page".
+      touch "$file"
+      
+      # 3. Firmamos de cero con el Hardened Runtime activo
+      codesign --force \
+               --sign "$IDENTITY" \
+               --options runtime \
+               "$file"
+    fi
+  done
+fi
+
+
+# Verify: every Mach-O in the bundle (app code, Frameworks, and the ffmpeg/ffprobe/jq
+# helpers in Resources) may only link against system libraries or the bundle itself.
+bad=0
+while IFS= read -r file; do
+  refs=$(otool -L "$file" 2>/dev/null | tail -n +2 | awk '{print $1}' \
+    | grep -v -E '^(/usr/lib/|/System/Library/|@rpath/|@loader_path/|@executable_path/)' || true)
+  if [ -n "$refs" ]; then
+    echo "error: $file links outside the bundle:"
+    echo "$refs" | sed 's/^/    /'
+    bad=1
+  fi
+done < <(find "$APP/Contents" -type f \( -perm -u+x -o -name '*.dylib' \) ! -path '*/_CodeSignature/*')
+[ "$bad" -eq 0 ] || exit 1
+
+echo "Embedded dependencies in $FRAMEWORKS: $(ls "$FRAMEWORKS" 2>/dev/null | wc -l | tr -d ' ') dylibs"
