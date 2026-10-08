@@ -317,7 +317,8 @@ final class MPVPlayerView: NSView {
                 }
             }
         }
-        let returnValue = mpv_command(mpv, &cargs)
+        _ = mpv_command(mpv, &cargs)
+        // let returnValue = mpv_command(mpv, &cargs)
         // print("\(command.rawValue): \(returnValue)")
     }
     
