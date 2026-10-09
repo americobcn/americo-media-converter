@@ -140,6 +140,7 @@ class Converter {
     func normalize(file: mediaFile,
                    targetLUFS: Int,
                    row: Int,
+                   destinationFolder: String?,
                    completion: @escaping (Bool, String?, Int32) -> Void) {
         delegate?.showProgressBar(row)
         delegate?.shouldUpdateOutView("Start Normalizing\n", Constants.MessageAttribute.succesMessageAttributes)
@@ -166,7 +167,7 @@ class Converter {
                 }
                 return
             }
-
+            
             // Step B: Pass 1 — loudness analysis
             DispatchQueue.main.async { [weak self] in
                 self?.delegate?.shouldUpdateOutView(
@@ -206,30 +207,36 @@ class Converter {
             // Step D: Pass 2 — apply normalization
             DispatchQueue.main.async { [weak self] in
                 self?.delegate?.shouldUpdateOutView(
-                    "Pass 2/2 — Applying normalization...\n",
+                    "Integrated loudness: \(m.inputI)\nTrue Peak: \(m.inputTP)\nLoudness Range: \(m.inputLRA)\nThreshold: \(m.inputThresh)\nOffset: \(m.targetOffset)\nPass 2/2 — Applying normalization...\n",
                     Constants.MessageAttribute.regularMessageAttributes)
                 self?.delegate?.conversionProgress(forRow: row, 70.0)
             }
 
-            let outputURL = Self.normalizeOutputURL(for: file.mfURL, targetLUFS: targetLUFS)
-            let filter = "loudnorm=I=\(targetLUFS).0:TP=-1.0:LRA=18.0" +
+            let outputURL = Self.normalizeOutputURL(for: file.mfURL, targetLUFS: targetLUFS, destinationFolder: destinationFolder!)
+            
+            let filter = "loudnorm=I=\(targetLUFS):TP=-1.0:LRA=\(m.inputLRA)" +
                          ":measured_I=\(m.inputI):measured_LRA=\(m.inputLRA)" +
                          ":measured_TP=\(m.inputTP):measured_thresh=\(m.inputThresh)" +
                          ":offset=\(m.targetOffset):linear=true"
+            
+            let inputPath = file.mfURL.path(percentEncoded: false)
+            let outputPath = outputURL.path(percentEncoded: false)
+            
             let pass2Args = ["-hide_banner", "-nostdin", "-y",
-                             "-i", file.mfURL.path,
+                             "-i", inputPath,
                              "-map_metadata", "0",
                              "-map", "0:a:0",
                              "-af", filter,
                              "-ar", sampleRate,
                              "-c:a", outCodec,
-                             outputURL.path]
-            let (_, pass2Status) = Self.runNormalizeProcess(executableURL: ffmpegURL, arguments: pass2Args)
-
+                             outputPath]
+                        
+            let (processOutput, pass2Status) = Self.runNormalizeProcess(executableURL: ffmpegURL, arguments: pass2Args)
+            
             guard pass2Status == 0 else {
                 DispatchQueue.main.async { [weak self] in
                     self?.delegate?.shouldUpdateOutView(
-                        "\nNormalization of \(file.mfURL.lastPathComponent) failed with status \(pass2Status).\n",
+                        "\nNormalization of \(file.mfURL.lastPathComponent) failed with status \(pass2Status).\nOutput:\(processOutput)",
                         Constants.MessageAttribute.errorMessageAttributes)
                     completion(false, nil, pass2Status)
                 }
@@ -290,7 +297,9 @@ class Converter {
         } catch {
             return ("", -1)
         }
+        
         process.waitUntilExit()
+        
         pipe.fileHandleForReading.readabilityHandler = nil
         let remaining = pipe.fileHandleForReading.readDataToEndOfFile()
         if let chunk = String(data: remaining, encoding: .utf8) {
@@ -364,10 +373,9 @@ class Converter {
                                     targetOffset: targetOffset)
     }
 
-    private static func normalizeOutputURL(for input: URL, targetLUFS: Int) -> URL {
-        //let suffix = targetLUFS == -23 ? "_EBU_R128(\(targetLUFS)LUFS)" : "_(\(targetLUFS)LUFS)"
+    private static func normalizeOutputURL(for input: URL, targetLUFS: Int, destinationFolder: String) -> URL {
         let suffix = targetLUFS == -23 ? "_EBU_R128(\(targetLUFS)LUFS)" : (targetLUFS == -24 ? "_ATSC85(\(targetLUFS)LKFS)" : "_(\(targetLUFS)LUFS)")
-        let dir = input.deletingLastPathComponent()
+        let dir = URL(filePath: destinationFolder) //input.deletingLastPathComponent()
         let name = input.deletingPathExtension().lastPathComponent
         let ext = input.pathExtension
         return dir.appendingPathComponent(name + suffix + (ext.isEmpty ? "" : "." + ext))

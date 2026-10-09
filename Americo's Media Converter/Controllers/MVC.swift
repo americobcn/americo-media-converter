@@ -600,9 +600,24 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         let targetLUFS = lufsValues[segmentIndex]
 
         normalizeOutTextView.textStorage?.setAttributedString(NSAttributedString(string: ""))
-
+        
+        var destinationFolder: String?
+        if prefs.defaultAudioDestination.isEmpty {
+            destinationFolder = chooseFolderDestination()
+        } else {
+            if checkDestinationPath(destPath: prefs.defaultAudioDestination) {
+                destinationFolder = prefs.defaultAudioDestination
+            } else {
+                destinationFolder = chooseFolderDestination()
+            }
+        }
+        
+        if destinationFolder == nil {
+            return
+        }
+        
         for (idx, file) in files.enumerated() {
-            cv.normalize(file: file, targetLUFS: targetLUFS, row: idx) { success, _, _ in
+            cv.normalize(file: file, targetLUFS: targetLUFS, row: idx, destinationFolder: destinationFolder) { success, _, _ in
                 if !success { self.progressBarError(idx) }
             }
         }
