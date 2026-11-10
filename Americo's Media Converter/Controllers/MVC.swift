@@ -327,7 +327,7 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         videoContainerButton.selectItem(withTitle: selectedVideoContainer.containers.first!)
         videoPadButton.state = .off
         
-        // default tab view on startup        
+        // default tab view on startup
         converterTabView.selectTabViewItem(withIdentifier: "videoTab")
     }
     
@@ -954,6 +954,11 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
             case 49:
                 playPause()
                 break
+            case 36:
+            if startConversionButton.isEnabled {
+                startConversionButton.performClick(self)
+            }
+            break
             default:
                 super.keyDown(with: event)
         }
