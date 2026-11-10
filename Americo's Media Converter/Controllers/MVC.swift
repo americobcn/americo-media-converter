@@ -326,6 +326,9 @@ class MVC: NSViewController, NSTableViewDelegate, NSTableViewDataSource, NSTabVi
         videoContainerButton.addItems(withTitles: VideoContainers.ProRes.containers)
         videoContainerButton.selectItem(withTitle: selectedVideoContainer.containers.first!)
         videoPadButton.state = .off
+        
+        // default tab view on startup        
+        converterTabView.selectTabViewItem(withIdentifier: "videoTab")
     }
     
     
