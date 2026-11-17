@@ -48,7 +48,8 @@ if [ "${#targets[@]}" -gt 0 ]; then
     "${fix_args[@]}" \
     --dest-dir "$FRAMEWORKS" \
     --install-path "@rpath/" \
-    --search-path /opt/homebrew/lib
+    --search-path /opt/homebrew/lib \
+    2>&1 | sed '/will invalidate the code signature/d'
 
   # dylibbundler adds an rpath equal to the literal --install-path string ("@rpath/") to
   # every file it touches. That's not a real search path, so every @rpath/*.dylib

@@ -486,7 +486,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "Americo's Media Converter needs access to network volumes to read and convert media files stored there.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				INFOPLIST_KEY_NSRemovableVolumesUsageDescription = "Allow acces to removable volumes";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -564,7 +564,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "Americo's Media Converter needs access to network volumes to read and convert media files stored there.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				INFOPLIST_KEY_NSRemovableVolumesUsageDescription = "Allow acces to removable volumes";
 				LD_RUNPATH_SEARCH_PATHS = (

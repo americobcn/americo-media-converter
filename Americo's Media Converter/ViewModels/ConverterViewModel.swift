@@ -66,11 +66,13 @@ final class ConverterViewModel: ConverterDelegate {
     // MARK: - Keyboard
     private func installSpaceKeyMonitor() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            MainActor.assumeIsolated {
-                guard let self, self.shouldTogglePlayback(for: event) else { return event }
+            nonisolated(unsafe) let event = event
+            let handled = MainActor.assumeIsolated {
+                guard let self, self.shouldTogglePlayback(for: event) else { return false }
                 self.togglePlayPause()
-                return nil
+                return true
             }
+            return handled ? nil : event
         }
     }
 
