@@ -31,6 +31,3 @@ This project is a native Swift macOS app that invokes bundled `ffmpeg` and `ffpr
 2. The app bundles `ffmpeg`/`ffprobe` under `Resources`; ensure those binaries are present and executable.
 3. Launch the app, add files (or folders) to the queue, choose a preset or custom options, and run conversions.
 
-## Contributing
-
-Contributions and suggestions are welcome. Please open issues or pull requests in the repository.

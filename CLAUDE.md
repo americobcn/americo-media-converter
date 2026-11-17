@@ -76,3 +76,4 @@ Views/
 - `ffmpeg`/`ffprobe` binaries are bundled at `Resources/ffmpeg` and `Resources/ffprobe` — they must be present and executable.
 - Supported video codecs: ProRes (`prores_ks`), DNxHD (`dnxhd`), H.264 (`libx264`).
 - Supported audio formats: WAV, MP3, AAC.
+- Update CLAUDE.md and README.me after a new feature is implemented or app update.
