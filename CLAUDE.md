@@ -41,20 +41,43 @@ open "Americo's Media Converter.xcodeproj"
 
 ## Architecture
 
+SwiftUI app (`App` lifecycle, no XIB). The libmpv player stays AppKit and is embedded with `NSViewRepresentable`.
+
 ```
+AmericoMediaConverterApp.swift   # @main App: resizable Window scene (+ Media menu commands) + Settings scene
+Models/
+  MediaFile.swift                # Identifiable file row model; title/info computed once at init
+  MediaOptions.swift             # Codec/format/profile/resolution/audio enums + ConversionTab
+  LUFSTarget.swift               # Normalize loudness targets (title + LUFS value)
+  FFmpegArguments.swift          # Pure ffmpeg argument builders for audio/video (unit-tested)
+  MediaFormatDescriber.swift     # Format description strings, FourCC helpers
+  LogEntry.swift / LogKind.swift # Log lines and their colors
+ViewModels/
+  ConverterViewModel.swift       # @Observable @MainActor, ConverterDelegate; state, dependent-picker resets (didSet), conversion flow
+Views/                           # one type per file (synchronized folder)
+  ContentView.swift              # Window layout (file list + buttons, player + tabs)
+  FileListView.swift             # List with selection, reorder, drop; empty state is a drop target
+  FileRowView.swift              # Row with icon, title, info, progress bar, failure icon
+  ConversionTabsView.swift       # In-panel tab bar + AudioTabView / VideoTabView / NormalizeTabView
+  ConversionTabBar.swift         # Icon + title tab buttons (Audio / Video / Normalize)
+  LabeledControl.swift           # Title-above-control layout used by the tabs
+  LogView.swift                  # Black auto-scrolling colored log (reads its own tab's log)
+  AC3ButtonStyle.swift / AC3ButtonBody.swift  # Cancel / Convert button style
+  PlayerView.swift               # NSViewRepresentable around the VM-owned MPVPlayerView
+  PlaybackCommands.swift         # Media menu: Delete removes selection (Space play/pause is a key monitor in the VM)
+  FocusedValues+Converter.swift  # Focused scene value that enables the Media menu
+  PreferencesView.swift          # Settings: GeneralPreferencesView / NotificationsPreferencesView
+  MPVPlayerView.swift            # AppKit libmpv/OpenGL player
 Controllers/
-  Constants.swift          # Global constants, supported format lists, helper extensions
-  MediaController.swift    # actor — ffprobe integration, format/codec descriptions
-  MVC.swift                # Main NSViewController — all UI logic and IBAction methods
-  PreferenceManager.swift  # UserDefaults via PreferencesManager.shared singleton
+  Constants.swift                # Global constants, supported format lists, binary/encoder checks
+  MediaController.swift          # actor — ffprobe integration, format/codec descriptions
+  PreferenceManager.swift        # UserDefaults via PreferencesManager.shared singleton
 Converters/
-  Converter.swift          # FFmpeg Process management; reports progress via ConverterDelegate
-Views/
-  AC3Buttons.swift         # Custom NSButton subclass
-  CustomCellView.swift     # Table cell with embedded progress indicator
+  Converter.swift                # FFmpeg Process management; reports progress via ConverterDelegate
+AmericoMediaConverterTests/      # Swift Testing unit tests (hosted in the app), Debug test configuration
 ```
 
-**Data flow:** `MVC` (main view controller) holds the file queue and drives conversions. It creates `Converter` instances and conforms to `ConverterDelegate` to receive progress/output callbacks. `MediaController` (actor) runs `ffprobe` to inspect files before conversion. `PreferencesManager.shared` supplies user settings.
+**Data flow:** `ConverterViewModel` (injected with `.environment`) holds the file queue and drives conversions. It owns the `Converter` and conforms to the `@MainActor` `ConverterDelegate` to receive log/progress callbacks. `MediaController` (actor) runs `ffprobe` to inspect files before they are added. `PreferencesManager.shared` supplies user settings.
 
 **Process execution:** All `Process`/`waitUntilExit()` calls are wrapped in `Task.detached` to avoid blocking the cooperative thread pool.
 

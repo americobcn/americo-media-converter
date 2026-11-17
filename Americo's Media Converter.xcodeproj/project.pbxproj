@@ -7,43 +7,64 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */; };
 		1E3B81092D9010CC003FABF5 /* MediaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3B81082D9010CC003FABF5 /* MediaController.swift */; };
 		1E51ED02300162D100429B2B /* MPVCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E51ED01300162D100429B2B /* MPVCommand.swift */; };
-		1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */; };
 		1EBD8D1C2E9A7B230022B1B5 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */; };
-		1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA4B692D8DC21E005152DF /* AppDelegate.swift */; };
 		1EEA4B6C2D8DC220005152DF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6B2D8DC220005152DF /* Assets.xcassets */; };
-		1EEA4B6F2D8DC220005152DF /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1EEA4B6D2D8DC220005152DF /* MainMenu.xib */; };
-		1EEA4B772D8DC324005152DF /* MVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA4B762D8DC324005152DF /* MVC.swift */; };
-		1EFA0001000000000000BB01 /* MPVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFA0001000000000000AA01 /* MPVPlayerView.swift */; };
+		1EFBB109000000000009B1AA /* AmericoMediaConverterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFBA109000000000009A1AA /* AmericoMediaConverterApp.swift */; };
 		2283A53C2E97B37900806232 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2283A53B2E97B37400806232 /* Constants.swift */; };
 		DA9E4E4A2E990A3600CD961B /* PreferenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9E4E492E990A3600CD961B /* PreferenceManager.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		1EFC0000000000000000E008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1EEA4B5E2D8DC21E005152DF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1EEA4B652D8DC21E005152DF;
+			remoteInfo = "Americo's Media Converter";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCellView.swift; sourceTree = "<group>"; };
 		1E3B81082D9010CC003FABF5 /* MediaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaController.swift; sourceTree = "<group>"; };
 		1E51ED01300162D100429B2B /* MPVCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVCommand.swift; sourceTree = "<group>"; };
-		1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AC3Buttons.swift; sourceTree = "<group>"; };
 		1EBD8D1B2E9A7B230022B1B5 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		1ED37F1C2EB18DA8003673C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1EEA4B662D8DC21E005152DF /* Americo's Media Converter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Americo's Media Converter.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		1EEA4B692D8DC21E005152DF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1EEA4B6B2D8DC220005152DF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		1EEA4B6E2D8DC220005152DF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		1EEA4B702D8DC220005152DF /* americo-media-converter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "americo-media-converter.entitlements"; sourceTree = "<group>"; };
-		1EEA4B762D8DC324005152DF /* MVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MVC.swift; sourceTree = "<group>"; };
-		1EFA0001000000000000AA01 /* MPVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPVPlayerView.swift; sourceTree = "<group>"; };
 		1EFA0002000000000000AA02 /* americo-media-converter-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "americo-media-converter-Bridging-Header.h"; sourceTree = "<group>"; };
+		1EFBA109000000000009A1AA /* AmericoMediaConverterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmericoMediaConverterApp.swift; sourceTree = "<group>"; };
+		1EFC0000000000000000E001 /* AmericoMediaConverterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AmericoMediaConverterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2283A53B2E97B37400806232 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DA9E4E492E990A3600CD961B /* PreferenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		1E1E25FD2D90969A005B5554 /* Views */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Views;
+			sourceTree = "<group>";
+		};
 		1E6D64E02E92E3F10051812E /* Resources */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		1EFB00010000000000000A01 /* Models */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1EFB00020000000000000A02 /* ViewModels */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		1EFC0000000000000000E002 /* AmericoMediaConverterTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AmericoMediaConverterTests;
 			sourceTree = "<group>";
 		};
 		DA0CC0032D91CAD9002E5BB5 /* Converters */ = {
@@ -62,25 +83,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1EFC0000000000000000E005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1E1E25FD2D90969A005B5554 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				1E885F7D2ED773C50050FE9A /* AC3Buttons.swift */,
-				1E1E25FF2D9096DF005B5554 /* CustomCellView.swift */,
-				1EFA0001000000000000AA01 /* MPVPlayerView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
 		1E1E25FE2D9096AA005B5554 /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
 				DA9E4E492E990A3600CD961B /* PreferenceManager.swift */,
 				2283A53B2E97B37400806232 /* Constants.swift */,
-				1EEA4B762D8DC324005152DF /* MVC.swift */,
 				1E3B81082D9010CC003FABF5 /* MediaController.swift */,
 			);
 			path = Controllers;
@@ -107,6 +124,7 @@
 			children = (
 				1EEA4B682D8DC21E005152DF /* Americo's Media Converter */,
 				1EBD8D1A2E9A7B230022B1B5 /* Frameworks */,
+				1EFC0000000000000000E002 /* AmericoMediaConverterTests */,
 				1EEA4B672D8DC21E005152DF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -115,6 +133,7 @@
 			isa = PBXGroup;
 			children = (
 				1EEA4B662D8DC21E005152DF /* Americo's Media Converter.app */,
+				1EFC0000000000000000E001 /* AmericoMediaConverterTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -128,9 +147,10 @@
 				DA0CC0032D91CAD9002E5BB5 /* Converters */,
 				1E1E25FE2D9096AA005B5554 /* Controllers */,
 				1E1E25FD2D90969A005B5554 /* Views */,
-				1EEA4B692D8DC21E005152DF /* AppDelegate.swift */,
+				1EFB00010000000000000A01 /* Models */,
+				1EFB00020000000000000A02 /* ViewModels */,
+				1EFBA109000000000009A1AA /* AmericoMediaConverterApp.swift */,
 				1EEA4B6B2D8DC220005152DF /* Assets.xcassets */,
-				1EEA4B6D2D8DC220005152DF /* MainMenu.xib */,
 				1EEA4B702D8DC220005152DF /* americo-media-converter.entitlements */,
 				1EFA0002000000000000AA02 /* americo-media-converter-Bridging-Header.h */,
 			);
@@ -154,7 +174,10 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				1E1E25FD2D90969A005B5554 /* Views */,
 				1E6D64E02E92E3F10051812E /* Resources */,
+				1EFB00010000000000000A01 /* Models */,
+				1EFB00020000000000000A02 /* ViewModels */,
 				DA0CC0032D91CAD9002E5BB5 /* Converters */,
 			);
 			name = "Americo's Media Converter";
@@ -163,6 +186,29 @@
 			productName = MyApp;
 			productReference = 1EEA4B662D8DC21E005152DF /* Americo's Media Converter.app */;
 			productType = "com.apple.product-type.application";
+		};
+		1EFC0000000000000000E003 /* AmericoMediaConverterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1EFC0000000000000000E011 /* Build configuration list for PBXNativeTarget "AmericoMediaConverterTests" */;
+			buildPhases = (
+				1EFC0000000000000000E004 /* Sources */,
+				1EFC0000000000000000E005 /* Frameworks */,
+				1EFC0000000000000000E006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1EFC0000000000000000E007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1EFC0000000000000000E002 /* AmericoMediaConverterTests */,
+			);
+			name = AmericoMediaConverterTests;
+			packageProductDependencies = (
+			);
+			productName = AmericoMediaConverterTests;
+			productReference = 1EFC0000000000000000E001 /* AmericoMediaConverterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -176,6 +222,10 @@
 				TargetAttributes = {
 					1EEA4B652D8DC21E005152DF = {
 						CreatedOnToolsVersion = 13.2.1;
+					};
+					1EFC0000000000000000E003 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 1EEA4B652D8DC21E005152DF;
 					};
 				};
 			};
@@ -193,6 +243,7 @@
 			projectRoot = "";
 			targets = (
 				1EEA4B652D8DC21E005152DF /* Americo's Media Converter */,
+				1EFC0000000000000000E003 /* AmericoMediaConverterTests */,
 			);
 		};
 /* End PBXProject section */
@@ -203,7 +254,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				1EEA4B6C2D8DC220005152DF /* Assets.xcassets in Resources */,
-				1EEA4B6F2D8DC220005152DF /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1EFC0000000000000000E006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,29 +294,29 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E3B81092D9010CC003FABF5 /* MediaController.swift in Sources */,
-				1EEA4B772D8DC324005152DF /* MVC.swift in Sources */,
 				2283A53C2E97B37900806232 /* Constants.swift in Sources */,
 				DA9E4E4A2E990A3600CD961B /* PreferenceManager.swift in Sources */,
 				1E51ED02300162D100429B2B /* MPVCommand.swift in Sources */,
-				1EEA4B6A2D8DC21E005152DF /* AppDelegate.swift in Sources */,
-				1E1E26002D9096DF005B5554 /* CustomCellView.swift in Sources */,
-				1E885F7E2ED773D90050FE9A /* AC3Buttons.swift in Sources */,
-				1EFA0001000000000000BB01 /* MPVPlayerView.swift in Sources */,
+				1EFBB109000000000009B1AA /* AmericoMediaConverterApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1EFC0000000000000000E004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-		1EEA4B6D2D8DC220005152DF /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				1EEA4B6E2D8DC220005152DF /* Base */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
+/* Begin PBXTargetDependency section */
+		1EFC0000000000000000E007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1EEA4B652D8DC21E005152DF /* Americo's Media Converter */;
+			targetProxy = 1EFC0000000000000000E008 /* PBXContainerItemProxy */;
 		};
-/* End PBXVariantGroup section */
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1EEA4B712D8DC220005152DF /* Debug */ = {
@@ -429,7 +486,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				INFOPLIST_KEY_NSRemovableVolumesUsageDescription = "Allow acces to removable volumes";
@@ -508,7 +564,6 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Américo's Media Converter";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				INFOPLIST_KEY_NSRemovableVolumesUsageDescription = "Allow acces to removable volumes";
@@ -545,6 +600,50 @@
 			};
 			name = Release;
 		};
+		1EFC0000000000000000E009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 569VP8PFMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.americodev.AmericoMediaConverterTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Americo's Media Converter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Americo's Media Converter";
+			};
+			name = Debug;
+		};
+		1EFC0000000000000000E010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 569VP8PFMZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.americodev.AmericoMediaConverterTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Americo's Media Converter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Americo's Media Converter";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -562,6 +661,15 @@
 			buildConfigurations = (
 				1EEA4B742D8DC220005152DF /* Debug */,
 				1EEA4B752D8DC220005152DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1EFC0000000000000000E011 /* Build configuration list for PBXNativeTarget "AmericoMediaConverterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1EFC0000000000000000E009 /* Debug */,
+				1EFC0000000000000000E010 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
