@@ -191,6 +191,9 @@ final class ConverterViewModel: ConverterDelegate {
         guard !selection.isEmpty else { return }
         files.removeAll { selection.contains($0.id) }
         selection = []
+        audioLog = []
+        videoLog = []
+        normalizeLog = []
         player.clear()
     }
 
