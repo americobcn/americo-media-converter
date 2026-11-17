@@ -1,7 +1,8 @@
 import Cocoa
 
+@MainActor
 protocol ConverterDelegate: AnyObject {
-    func shouldUpdateOutView(_ text: String, _ attributes: [NSAttributedString.Key: Any])
+    func appendLog(_ text: String, _ kind: LogKind)
     func conversionProgress(forRow row: Int, _ percent: Double)
     func showProgressBar(_ row: Int)
 }
@@ -27,15 +28,17 @@ class Converter {
         ffprobeURL = Constants.checkBinary(binary: "ffprobe")
     }
 
-    func convert(file: mediaFile,
+    func convert(file: MediaFile,
                  args: String,
                  outPath: String,
                  row: Int,
                  completion: @escaping (Bool, String?, Int32) -> Void) {
 
         // Update UI with start message
-        delegate?.shouldUpdateOutView("Start Converting\n", Constants.MessageAttribute.succesMessageAttributes)
-        delegate?.showProgressBar(row)
+        MainActor.assumeIsolated {
+            delegate?.appendLog("Start Converting\n", .success)
+            delegate?.showProgressBar(row)
+        }
 
         var duration = 0.0
         if let fileDuration = file.formatDescription["duration"] as? Double {
@@ -68,14 +71,14 @@ class Converter {
             try process.run()
         } catch {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView("\(file.mfURL.lastPathComponent): Failed to start conversion process: \(error.localizedDescription)\n",
-                                                   Constants.MessageAttribute.errorMessageAttributes)
+                self.delegate?.appendLog("\(file.mfURL.lastPathComponent): Failed to start conversion process: \(error.localizedDescription)\n",
+                                                   .error)
                 completion(false, error.localizedDescription, -1)
             }
         }
     }
 
-    private func buildArguments(file: mediaFile, args: String, outPath: String) -> [String] {
+    private func buildArguments(file: MediaFile, args: String, outPath: String) -> [String] {
         var arguments: [String] = ["-hide_banner", "-progress", "pipe:1",
                                    "-nostats", "-i", file.mfURL.path]
         arguments.append(contentsOf: args.components(separatedBy: .whitespaces).filter { !$0.isEmpty })
@@ -84,20 +87,20 @@ class Converter {
     }
 
 
-    private func handleOutput(_ fileHandle: FileHandle,  _ duration: Double, file: mediaFile, row: Int) {
+    private func handleOutput(_ fileHandle: FileHandle,  _ duration: Double, file: MediaFile, row: Int) {
         let data = fileHandle.availableData
         guard let output = String(data: data, encoding: .utf8) else { return }
         if output.contains("out_time_ms") {
             processProgressOutput(output, duration ,file: file, row: row)
         } else {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
+                self.delegate?.appendLog(output, .regular)
             }
         }
     }
 
 
-    private func processProgressOutput(_ output: String, _ duration: Double, file: mediaFile, row: Int) {
+    private func processProgressOutput(_ output: String, _ duration: Double, file: MediaFile, row: Int) {
         let components = output.split(separator: "\n").filter { $0.contains("out_time_ms") }
         for component in components {
             let timeComponents = component.split(separator: "=")
@@ -112,23 +115,24 @@ class Converter {
     }
 
 
-    private func updateProgress(_ seconds: Double, _ duration: Double, file: mediaFile, _ output: String, row: Int) {
+    @MainActor
+    private func updateProgress(_ seconds: Double, _ duration: Double, file: MediaFile, _ output: String, row: Int) {
         let progress = round(min((seconds / duration) * 100, 100) * 100) / 100.0
         delegate?.conversionProgress(forRow: row, progress)
-        delegate?.shouldUpdateOutView(output, Constants.MessageAttribute.regularMessageAttributes)
+        delegate?.appendLog(output, .regular)
     }
 
 
-    private func handleProcessTermination(_ process: Process, file: mediaFile, completion: @escaping (Bool, String?, Int32) -> Void) {
+    private func handleProcessTermination(_ process: Process, file: MediaFile, completion: @escaping (Bool, String?, Int32) -> Void) {
         let status = process.terminationStatus
 
         DispatchQueue.main.async {
             if status == 0 {
-                self.delegate?.shouldUpdateOutView("\nSuccess converting \(file.mfURL.lastPathComponent).\n",
-                                                   Constants.MessageAttribute.succesMessageAttributes)
+                self.delegate?.appendLog("\nSuccess converting \(file.mfURL.lastPathComponent).\n",
+                                                   .success)
             } else {
-                self.delegate?.shouldUpdateOutView("\nError converting \(file.mfURL.lastPathComponent), failed with status code \(status).\n",
-                                                   Constants.MessageAttribute.errorMessageAttributes)
+                self.delegate?.appendLog("\nError converting \(file.mfURL.lastPathComponent), failed with status code \(status).\n",
+                                                   .error)
             }
             completion(status == 0, nil, status)
         }
@@ -137,19 +141,21 @@ class Converter {
 
     // MARK: - Normalize
 
-    func normalize(file: mediaFile,
+    func normalize(file: MediaFile,
                    targetLUFS: Int,
                    row: Int,
                    destinationFolder: String?,
                    completion: @escaping (Bool, String?, Int32) -> Void) {
-        delegate?.showProgressBar(row)
-        delegate?.shouldUpdateOutView("Start Normalizing\n", Constants.MessageAttribute.succesMessageAttributes)
+        MainActor.assumeIsolated {
+            delegate?.showProgressBar(row)
+            delegate?.appendLog("Start Normalizing\n", .success)
+        }
 
         guard let ffmpegURL = ffmpegURL, let ffprobeURL = ffprobeURL else {
             DispatchQueue.main.async {
-                self.delegate?.shouldUpdateOutView(
+                self.delegate?.appendLog(
                     "Missing ffmpeg or ffprobe binary.\n",
-                    Constants.MessageAttribute.errorMessageAttributes)
+                    .error)
                 completion(false, nil, -1)
             }
             return
@@ -160,9 +166,9 @@ class Converter {
             let (inputCodec, sampleRate) = Self.probeAudioStream(url: file.mfURL, ffprobeURL: ffprobeURL)
             guard let inputCodec, let sampleRate, let outCodec = Self.outputCodec(for: inputCodec) else {
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(
+                    self?.delegate?.appendLog(
                         "Failed to probe \(file.mfURL.lastPathComponent).\n",
-                        Constants.MessageAttribute.errorMessageAttributes)
+                        .error)
                     completion(false, nil, -1)
                 }
                 return
@@ -170,9 +176,9 @@ class Converter {
             
             // Step B: Pass 1 — loudness analysis
             DispatchQueue.main.async { [weak self] in
-                self?.delegate?.shouldUpdateOutView(
+                self?.delegate?.appendLog(
                     "Pass 1/2 — Analysing loudness...\n",
-                    Constants.MessageAttribute.regularMessageAttributes)
+                    .regular)
                 self?.delegate?.conversionProgress(forRow: row, 30.0)
             }
 
@@ -184,9 +190,9 @@ class Converter {
 
             guard pass1Status == 0 else {
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(
+                    self?.delegate?.appendLog(
                         "Pass 1 failed with status \(pass1Status).\n",
-                        Constants.MessageAttribute.errorMessageAttributes)
+                        .error)
                     completion(false, nil, pass1Status)
                 }
                 return
@@ -196,9 +202,9 @@ class Converter {
             guard let jsonString = Self.extractLoudnormJSON(from: pass1Output),
                   let m = Self.parseLoudnormJSON(jsonString) else {
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(
+                    self?.delegate?.appendLog(
                         "Failed to parse loudnorm measurements.\n",
-                        Constants.MessageAttribute.errorMessageAttributes)
+                        .error)
                     completion(false, nil, -1)
                 }
                 return
@@ -206,9 +212,9 @@ class Converter {
 
             // Step D: Pass 2 — apply normalization
             DispatchQueue.main.async { [weak self] in
-                self?.delegate?.shouldUpdateOutView(
+                self?.delegate?.appendLog(
                     "Integrated loudness: \(m.inputI)\nTrue Peak: \(m.inputTP)\nLoudness Range: \(m.inputLRA)\nThreshold: \(m.inputThresh)\nOffset: \(m.targetOffset)\nPass 2/2 — Applying normalization...\n",
-                    Constants.MessageAttribute.regularMessageAttributes)
+                    .regular)
                 self?.delegate?.conversionProgress(forRow: row, 70.0)
             }
 
@@ -235,22 +241,22 @@ class Converter {
             
             guard pass2Status == 0 else {
                 DispatchQueue.main.async { [weak self] in
-                    self?.delegate?.shouldUpdateOutView(
+                    self?.delegate?.appendLog(
                         "\nNormalization of \(file.mfURL.lastPathComponent) failed with status \(pass2Status).\nOutput:\(processOutput)",
-                        Constants.MessageAttribute.errorMessageAttributes)
+                        .error)
                     completion(false, nil, pass2Status)
                 }
                 return
             }
 
             DispatchQueue.main.async { [weak self] in
-                self?.delegate?.shouldUpdateOutView(
+                self?.delegate?.appendLog(
                     "\nNormalization of \(file.mfURL.lastPathComponent) complete.\n",
-                    Constants.MessageAttribute.succesMessageAttributes)
+                    .success)
                 self?.delegate?.conversionProgress(forRow: row, 90.0)
-                self?.delegate?.shouldUpdateOutView(
+                self?.delegate?.appendLog(
                     "Pass 3/3 — Verifying output...\n",
-                    Constants.MessageAttribute.regularMessageAttributes)
+                    .regular)
             }
 
             let verification = Self.verifyNormalizedFile(url: outputURL, ffmpegURL: ffmpegURL, ffprobeURL: ffprobeURL)
@@ -265,11 +271,11 @@ class Converter {
                                  "  Integrated loudness: \(v.integratedLoudness)\n" +
                                  "  Loudness range:      \(v.loudnessRange)\n" +
                                  "  True peak:           \(v.truePeak)\n"
-                    self?.delegate?.shouldUpdateOutView(report, Constants.MessageAttribute.regularMessageAttributes)
+                    self?.delegate?.appendLog(report, .regular)
                 } else {
-                    self?.delegate?.shouldUpdateOutView(
+                    self?.delegate?.appendLog(
                         "Verification failed — could not read output file stats.\n",
-                        Constants.MessageAttribute.errorMessageAttributes)
+                        .error)
                 }
                 self?.delegate?.conversionProgress(forRow: row, 100.0)
                 completion(true, nil, 0)

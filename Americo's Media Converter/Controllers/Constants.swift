@@ -27,31 +27,6 @@ struct Constants {
     static private(set) var hasLibx264 = false
     static private(set) var h264Codec = "h264"
 
-    enum ConversionType {
-        case audio
-        case video
-        case normalize
-    }
-    
-    struct MessageAttribute {
-        static let regularMessageAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.lightGray
-        ]
-
-        static let errorMessageAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.red
-        ]
-
-        static let succesMessageAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.green
-        ]
-    }
-    
-
-    
     //MARK: Helper funcions
     static func dropAlert(message: String, informative: String) {
         let alert = NSAlert()

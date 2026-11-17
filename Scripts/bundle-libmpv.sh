@@ -104,7 +104,8 @@ while IFS= read -r file; do
     echo "$refs" | sed 's/^/    /'
     bad=1
   fi
-done < <(find "$APP/Contents" -type f \( -perm -u+x -o -name '*.dylib' \) ! -path '*/_CodeSignature/*')
+done < <(find "$APP/Contents" -type f \( -perm -u+x -o -name '*.dylib' \) ! -path '*/_CodeSignature/*' \
+  ! -path '*/XCTest*' ! -path '*/libXCTest*' ! -path '*/XCUIAutomation*' ! -path '*/Testing.framework/*' ! -path '*/lib_Testing*')
 [ "$bad" -eq 0 ] || exit 1
 
 echo "Embedded dependencies in $FRAMEWORKS: $(ls "$FRAMEWORKS" 2>/dev/null | wc -l | tr -d ' ') dylibs"
