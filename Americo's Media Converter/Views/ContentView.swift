@@ -26,7 +26,7 @@ struct ContentView: View {
                 PlayerView()
                     .aspectRatio(16.0 / 9.0, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-
+                    .padding(.bottom, 5)
                 ConversionTabsView()
                     .frame(minHeight: 300, maxHeight: .infinity)
             }
